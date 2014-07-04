@@ -1,3 +1,21 @@
-name: Your New Jekyll Site
-markdown: redcarpet
-pygments: true
+# Dependencies
+markdown:         redcarpet
+pygments:         true
+
+# Permalinks
+permalink:        pretty
+
+# Setup
+title:            faq.sa
+tagline:          'sealedabstract lite'
+description:      'My main blog got too popular'
+url:              http://faq.sealedabstract.com
+
+author:
+  name:           'Drew Crawford'
+  url:            http://sealedabstract.com
+
+paginate:         5
+
+redcarpet:
+    extensions: [with_toc_data]
