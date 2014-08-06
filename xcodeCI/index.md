@@ -90,6 +90,8 @@ If a product was produced (puzzlingly, an archive doesn't necessarily indicate a
 XCS_PRODUCT=HockeyAppTester2 Bot.ipa
 ```
 
+which happens to be located in XCS_OUTPUT_DIR directory, aparrently.  
+
 
 ## Figuring out build status
 
