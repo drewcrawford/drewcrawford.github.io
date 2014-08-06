@@ -5,6 +5,8 @@ title: Xcode CI, The missing manual
 
 # Triggers
 
+Triggers run under a user called `_xcsbuildd`.
+
 In XC6b5, the following environment variables are available to triggers.
 
 Pre-build:
@@ -82,6 +84,13 @@ If an archive was produced, you'll also get
 XCS_ARCHIVE=/Library/Developer/XcodeServer/Integrations/Integration-5fa0beca97c1a3e60628eee97e10a69b/Archive.xcarchive
 ```
 
+If a product was produced (puzzlingly, an archive doesn't necessarily indicate a product), you'll also get
+
+```bash
+XCS_PRODUCT=HockeyAppTester2 Bot.ipa
+```
+
+
 ## Figuring out build status
 
 `XCS_INTEGRATION_RESULT`'s known values are
@@ -90,6 +99,7 @@ XCS_ARCHIVE=/Library/Developer/XcodeServer/Integrations/Integration-5fa0beca97c1
 * `build-errors`, failed to build
 * `warnings`, warnings ocurred
 * `analyzer-warnings`, analyze results occurred
+* `test-failures`, tests failed
 * `succeeded`, everything was fine
 
 You get exactly one of these, it's not quite clear what the priority is when multiple are possible.
