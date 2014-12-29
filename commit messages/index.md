@@ -66,4 +66,4 @@ Keep in mind that their “merge commits” usually just summarize the actual pa
 
 ## A workable strategy
 
-I recommend recording information about what is being worked on contemporaneously, and then turning that information into a commit message at the end.  For more information on that strategy, check out my FAQ on [uninterruptible programming](http://127.0.0.1:4000/uninterruptible_programming_supply/).
+I recommend recording information about what is being worked on contemporaneously, and then turning that information into a commit message at the end.  For more information on that strategy, check out my FAQ on [uninterruptible programming](/uninterruptible_programming_supply/).
