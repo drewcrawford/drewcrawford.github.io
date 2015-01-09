@@ -160,4 +160,4 @@ Until now.  It turns out that this is done via a command like
 /Applications/Xcode.app/Contents/Developer/usr/bin/symbols -noTextInSOD -noDaemon -arch all -symbolsPackageDir /Symbols appbinary
 ```
 
-Again, [CaveJohnson](http://github.com/drewcrawford/CaveJohnson) can generate these symbols on the CLI with its `xcodeGUITricks` command.
+Again, [CaveJohnson](http://github.com/drewcrawford/CaveJohnson) can generate these symbols on the CLI with its `xcodeGUITricks` command.  I've filed rdar://19432725 for this issue.
