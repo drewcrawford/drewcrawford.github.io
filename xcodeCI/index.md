@@ -114,7 +114,7 @@ Try [CaveJohnson](http://github.com/drewcrawford/CaveJohnson)
 
 Try [CaveJohnson](http://github.com/drewcrawford/CaveJohnson)
 
-## Signing for *distribution*
+# Signing for *distribution*
 
 So funny story.  XCS only works for development certificates, officially.  Unofficially, you can make it work with distribution certificates.  This is important if you want to do, e.g., TestFlight.
 
@@ -134,7 +134,7 @@ The solution is to tick the radio box that prevents displaying this dialog:
 
 ![access](access.png)
 
-## The case of the missing SwiftSupport
+# The case of the missing SwiftSupport
 
 You may get some kind of email like this from iTunesConnect:
 
@@ -145,7 +145,7 @@ This is because the IPA that Xcode Server built doesn't have a `SwiftSupport` fo
 
 The answer is to build your own IPA including the `SwiftSupport` from the xcarchive.  [CaveJohnson](http://github.com/drewcrawford/CaveJohnson) does this with its `xcodeGUITricks` command.  I've filed rdar://19432441 for this issue.
 
-## Create .symbol files with this one weird trick
+# Create .symbol files with this one weird trick
 
 
 iTunesConnect symbolification uses a new file format called `.symbol` (unlike all the third-party services, which use `dSYM`).
