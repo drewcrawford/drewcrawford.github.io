@@ -134,6 +134,8 @@ The solution is to tick the radio box that prevents displaying this dialog:
 
 ![access](access.png)
 
+I've filed rdar://19431399 for this issue.
+
 # The case of the missing SwiftSupport
 
 You may get some kind of email like this from iTunesConnect:
