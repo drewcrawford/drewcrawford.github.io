@@ -28,6 +28,7 @@ Instead I'm going to cover the "hard stuff".  The stuff that I spent hours bangi
 * Closures and the memory model, in depth
 * OO programming without objects
 * Understanding the "selfish" functions (`self`, `&mut self`, `&self`), and their semantics, in depth
+* Multithreading
 * Grab bag of "medium-sized" topics that may be of interest to Swift programmers: generics, semicolons, visibility, static dispatch
 
 Let's start with the type system.
@@ -804,3 +805,137 @@ dispatch_async(dispatch_get_main_queue()) {
 to force the closure to return `void`.
 
 Rust however does not change the rules depending on length like Swift does.  **All functions return the last line regardless of length**.  If the last line ends with a semicolon your function will return `()` and if not it will return whatever that line was.
+
+# Threading
+
+If you are used to Swift, you are probably doing a lot of `dispatch_async`, often.  Unfortunately... Rust takes a dim view of this.
+
+## Scoped
+
+The simplest way to do threading in Rust is to use `thread::scoped`:
+
+```rust
+use std::thread;
+
+fn main() {
+    let guard = thread::scoped(|| {
+        println!("Hello from a thread!");
+    });
+
+    // guard goes out of scope here
+}
+```
+
+This construction is actually somewhat clever.  When the guard 'goes out of scope', its destructor is called, and its destructor waits for the thread to finish running.  That way we can be sure that the stack frame of `main` will be around for the full lifetime of the thread.  The function signature of `thread::scoped` makes this clear:
+
+```rust
+pub fn scoped<'a, T, F>(f: F) -> JoinGuard<'a, T> where T: Send + 'a, F: FnOnce() -> T, F: Send + 'a
+```
+
+Just for fun, I'll break this down:
+
+`fn scoped<'a, T, F>` a function that will use generic parameters `T` and `F`, and lifetime parameter `'a`.  We are making up names here; they do not mean anything yet.
+
+`(f: F) -> JoinGuard<'a, T>` taking one parameter `f` (of type `F`) and returning a JoinGuard with lifetime `'a` and of type `T`.  The `T` will be the return type of the closure.
+
+
+`where T: Send + 'a`  Where `T` has the `Send` trait (indicating that we can move it onto a new thread.  Nearly all types have this, but some C types do not.) and lifetime `'a`.  Importantly, we are saying here that the `JoinGuard` and `T` have the same lifetime, that is, that the `T` is not going to vanish while it is inside some `JoinGuard`.
+
+`F: FnOnce() -> T`, Here we say that `F` is a closure that returns type `T`.  `FnOnce` means that the closure will only be called once, and after it is called, it is no longer valid.  This is to avoid the situation where a closure calls foo.move() once, but then *the closure itself is run twice*, thereby causing a double move.  `FnOnce` can call moving functions on captured variables, whereas alternate closure types `Fn` and `FnMut` cannot.
+
+`F: Send + 'a` `F` (our closure) has the `Send` trait, indicating that it can be sent to a new thread, and it also has the `'a` lifetime.  In the context of a closure, a lifetime means *the environment's* lifetime.  So now we are saying that the *environment* (a.k.a. the *stack frame*) cannot vanish out from under our `JoinGuard`.
+
+As a result you cannot capture anything in the closure that does not definitely exist until the JoinGuard is destroyed, and the JoinGuard will wait for the thread to complete, meaning that our function will block until the thread is done.
+
+If you come from a Swift background, that is probably not what you expected.  You expected to start a thread and then the function would return.  You can in fact do that, if you return *the `JoinGuard`*.  But at some point you have to wait on the JoinGuard.
+
+## Spawn
+
+Another thing you can do is `thread::spawn`.
+
+```rust
+use std::thread;
+use std::old_io::timer;
+use std::time::Duration;
+
+fn main() {
+    thread::spawn(move || {
+        println!("Hello from a thread!");
+    });
+
+    timer::sleep(Duration::milliseconds(50)); //we have to sleep here or otherwise our program will exit before printing.
+}
+``` 
+
+This is closer to idiomatic threading in Swift.  However, you can pretty much only use it with *moving* closures (since the environment may not outlive the thread and must be moved in).
+
+The function signature of `spawn` is also a lot simpler:
+
+```rust
+pub fn spawn<F>(f: F) -> JoinHandle where F: FnOnce(), F: Send + 'static
+```
+
+The difference here is that `F` gets the special lifetime `'static`.  (Again in the context of closures, the lifetime applies to the environment.)  Here we are saying that the environment must contain only static data (like global constants) (or data moved into the closure).  It cannot contain for example a borrowed reference, unless that borrowed reference is to something `'static`, because what if the borrowed reference goes out of scope.
+
+And that's the real trick.  Swift programmers are used to putting all kinds of things in closures, but Rust takes a dim view.  Generally speaking, there are a few solutions:
+
+### Arc and a Mutex:
+
+```rust
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::old_io::timer;
+use std::time::Duration;
+
+fn main() {
+    let data = Arc::new(Mutex::new(vec![1u32, 2, 3]));
+
+    for i in 0..2 {
+        let data = data.clone();
+        thread::spawn(move || {
+            let mut data = data.lock().unwrap();
+            data[i] += 1;
+        }); //unlocked here
+    }
+
+    timer::sleep(Duration::milliseconds(50));
+}
+```
+
+By wrapping our data in an `Arc` we can move a `clone()` of the `Arc` into the closure.  (Only the `Arc` is `clone`d, not the underlying data.  Recall `clone()` on `Rc`/`Arc` is like getting a strong pointer in Swift.)
+
+Since the `Arc` is reference-counted, the underlying data will not disappear until all the strong pointers go away, so we are fine on that front.
+
+The `Mutex` here is used to satisfy the compiler that we will not be violating some thread safety issue inside `Vec`, which the compiler does not know to be threadsafe.  The `Mutex` is `lock`ed explicitly, and it is unlocked when `lock()`'s return value goes out of scope.  As such, only one thread can be accessing the `Vec` at a time.
+
+### Channels
+
+Also, we can replace our `sleep` with a `channel`.  `channel` is a bit like `dispatch_semaphore_t` in Swift, except it also sends data.  (There is also a 'real' semaphore implementation in the standard library, although it is not widely used.)
+
+```rust
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::sync::mpsc;
+
+fn main() {
+    let data = Arc::new(Mutex::new(0u32));
+
+    let (tx, rx) = mpsc::channel();
+
+    for _ in 0..10 {
+        let (data, tx) = (data.clone(), tx.clone()); //these clones will both be moved into our closure
+
+        thread::spawn(move || {
+            let mut data = data.lock().unwrap();
+            *data += 1;
+
+            tx.send(()); //send a union ()
+        });
+    }
+
+    for _ in 0..10 {
+        rx.recv(); //receive 10 values before exiting
+    }
+}
+```
+
