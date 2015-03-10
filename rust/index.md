@@ -9,17 +9,17 @@ I needed to onboard to Rust recently for a project.  Here is the guide that I wa
 
 I'm an advanced Swift developer but I'm still learning Rust.  So some things might be wrong.  Send me a [PR on GitHub](https://github.com/drewcrawford/drewcrawford.github.io/pulls).
 
-Generally I believe that things can be taught best by people who still remember what it's like not to know them.  A lot of the Rust tutorials out there are written by people who have used the language for years.  So they gloss over some details that are important.
+Generally I believe that things can be taught best by people who still remember what it's like not to know them.  A lot of the Rust tutorials out there are written by people who have used the language for years.  So they gloss over some details that I think are important.
 
-Other tutorials cover things I already know, because I know Swift (another high-performance systems language) relatively well.  And also C.  So I don't need yet another pointer tutorial.  I need to know Rust.
+Other tutorials cover things I already know, because I know Swift (another high-performance systems language) relatively well.  And also C.  So I don't need yet another pointer tutorial, or 'what is a string'.  I need to know the new stuff.
 
-If you are trying to go from Rust to Swift, this guide might also be useful, since it explains one in terms of the other.
+If you are trying to go from Rust to Swift, this guide might also be useful, since it explains one in terms of the other, but I make no guarantees.
 
 # Value Types
 
 In Swift, we have value types (Structs/Enums) and reference types (Classes).  They are "on the same level" in the sense that, they are both fundamental types.
 
-In Rust, value types are fundamental, and reference types are secondary.  There is no "class" in Rust.  But you can still do a surprising amount of OO programming, as we'll see.
+In Rust, value types are fundamental, and reference types are secondary.  They are not on the same level.  There is not even any "class" in Rust.  If you want a reference type, you must derive it from some underlying value type.  We'll see how to do this once we cover the value types.
 
 ## Enums
 
@@ -36,7 +36,7 @@ Rust's structs are also very similar to Swift structs.  The differences are, as 
 
 In Swift a reference type is declared with `class`.  Rust does not really have a notion of this.  Instead, there are three "reference wrappers" that turn a value type into a reference type.
 
-Note that in all cases, you get value semantics *by wrapper*, so this is something that the *user* of the type does, not specified by the *type itself*.
+Note that in all cases, you get reference semantics *by wrapper*, so this is something that the *user* of the type does, not specified by the *type itself*.  Whereas in Swift `class` causes the *type itself* to be a reference.  In Rust, over here we can use something as a reference type with a wrapper, and somewhere else we can use it as a value type without a wrapper.  Value types are fundamental; reference types are glued on the top.
 
 You can, technically, declare a *type alias* that works out to e.g. `Box<T>` but this is not idiomatic.  People expect the caller to decide how to use the type, and for it not to be a property of the type itself.
 
@@ -116,7 +116,7 @@ Rust takes the view that this is the programmer's responsibility.  And so you ar
 
 It's important to distinguish between reference and value types *semantically* vs reference and value types *performance-wise*.
 
-In C for example, when we say "pass-by-value" what we really mean is "pass-with-copy".  Whereas pass-by-reference is "pass-without-copy"  And so people pass references around in C, not necessarily because they have to for some semantic reason, but because it is fast.
+In C for example, when we say "pass-by-value" what we really mean is "pass-with-copy".  Whereas pass-by-reference is "pass-without-copy".  And so people pass references around in C, not necessarily because they have to for some semantic reason, but because it is fast.
 
 However, this view does not hold true for Swift and Rust.  "pass-by-value" can be zero-copy, or it can be copy-on-write, or something like that.  Pass-by-reference is not necessarily faster than pass-by-value.  Use the semantics that make sense for your program, and do not work on the presumption that one is faster than the other.
 
@@ -148,7 +148,7 @@ impl MyProtocol for Struct {
 }
 ```
 
-This separation between the main body code and the trait code is similar to `extension` in Swift.  
+This separation between the main body code and the trait code is similar to `extension` in Swift.  It can be in different files, etc.
 
 Also like `extension`, you can provide a trait impelementation for a system class.
 
@@ -171,7 +171,7 @@ fn main() {
 
 This avoids some of the "monkeypatching scariness" of traditional class extensions, since you have to opt into them with a fully-qualified name at the place where they are used.
 
-If you don't do this you will get an error, and there will be a note suggesting one or more `use` lines that will get an implementation of `my_func` that is usable.
+If you don't do this you will get an error, and there will be a note suggesting one or more `use` lines that you need to add to make it work.
 
 ## Traits as inheritance
 
@@ -198,6 +198,8 @@ impl<T> MyProtocol for Box<T> {
 ```
 
 (Contrawise to a Swift class extension, which cannot be overriden.)
+
+Overall traits are an interesting idea, and unify a lot of concepts that in Swift would be separate into a single tool.
 
 # Closures
 
@@ -258,6 +260,7 @@ Notable changes include:
 
 1.  We don't specify a type for `read` and `write`, the compiler figures it out
 2.  test is now a closure instead of a function.  In Swift, functions are simply named closures.  In Rust, they are different.  Only closures can capture the environment.
+3.  Rust wants a little more hand-holding around Optionals.  In Swift you can assign to an optional directly, in Rust, you must assign it to `Some(the thing)`.
 
 Unfortunately, the Rust compiler takes a dim view of this code, producing a full 85 lines of errors:
 
@@ -349,7 +352,7 @@ test.rs:12         read = Some(||{
 error: aborting due to 7 previous errors
 ```
 
-Where do we even start?
+I am sorry to report, one of the big annoyances of Rust is dealing with these long impenetrable novels the compiler writes us about what is wrong with our code.  Where do we even start?
 
 Well, the first place we start is making test mutable, to avoid the error `test.rs:17:5: 17:9 error: cannot borrow immutable local variable 'test' as mutable`.
 
@@ -358,7 +361,7 @@ The second thing we do is to solve this 'str does not live long enough' business
 When a closure captures something, it can either do it "by borrow" or "by move".
 
 1.  "by borrow" means essentially that the closure gets a reference to the enclosing stack frame.  However, the `read` and `write` functions are used outside the stack frame of `test`, so that's no good.  This is essentially what the `str does not live long enough` is about.  
-2.  "by move" means that the values that are captured are *moved into* the closure.  You will recall earlier that *moving* means that the old references are invalid; that is also true of this situation.
+2.  "by move" means that the values that are captured are *moved into* the closure, and thus may exist independently of the stack frame.
 
 With these changes in hand, we have a new attempt:
 
@@ -428,9 +431,11 @@ test.rs:16:6: 16:6 help: perhaps you meant to use `clone()`?
 error: aborting due to 3 previous errors
 ```
 
-The difficulty here is that with `read` and `write` now `move`d into our `test` closure, they can't be used from outside it, after the closure has been declared.
+You will recall earlier that *moving* means that the old references become invalid.  That is also true here.
 
-So we'll move it inside.  It doesn't make a semantic difference:
+The difficulty here is that with `read` and `write` now `move`d into our `test` closure, from outside the references become invalid.  So that's no good.
+
+So we'll move our usage of `read` and `write` inside.  It doesn't make a semantic difference:
 
 ```rust
 fn main() {
@@ -467,9 +472,9 @@ test.rs:16         read.unwrap()();
 error: aborting due to previous error
 ```
 
-Now we're down to just one error, although this requires some explaining.  For now, understand that calling `.unwrap()` on an `Option` incurs a `move`.  (This is because it's declared `self`, see the section on Functions below.) So we cannot unwrap twice.
+Now we're down to just one error, although this requires some explaining.  For now, understand that calling `.unwrap()` on an `Option` incurs a `move`.  (This is because it's declared `self`, see the section on Functions below.) So we cannot unwrap twice, because that would require us to `move` twice.
 
-However we can unwrap into a temporary variable, and now it compiles fine:
+However we can unwrap into a temporary variable, once.  And use that unwrapped value both times.  And now it's fine:
 
 ```rust
 fn main() {
@@ -505,16 +510,16 @@ Although the output may be unexpected:
 "Test"
 ```
 
-This is because **moving closures in Rust have different environments**.  A moving closure essentially works from a cloned environment, frozen in time exactly as it was when the closure was declared.
+This is because **moving closures in Rust have different environments**.  A moving closure (e.g. `move || {...}`) essentially works from a cloned environment, frozen in time exactly as it was when the closure was declared.
 
 Swift closures, in contrast, have shared environments.  Making changes to the environment in one closure may effect another closure that shares the environment.
 
-Rust's non-moving closures technically have a shared environment, but it is hard to notice, because the borrow checker makes it difficult for 2 closures to read and write to the same parts of the environment.  As we saw in this example.
+Rust's non-moving closures (e.g. `|| {...}`) technically have a shared environment, but it is hard to notice, because the borrow checker makes it difficult for 2 closures to read and write to the same parts of the environment.  As we saw in this example.
 
 
 # Arrays
 
-Rust's arrays are of fixed size, and the array is in fact part of the array's type.  A mutable array in Rust means that the elements can be swapped.  But elements cannot be appended, because the array size is fixed.
+Rust's arrays are of fixed size, and the array is in fact part of the array's type: `[i32; 2]` means 2, 32-bit ints.  A mutable array in Rust means that the elements can be swapped.  But elements cannot be appended, because the array size is fixed.
 
 Rust's `Vec` type is dynamically-sized and therefore is closer to the Swift array.
 
@@ -532,7 +537,7 @@ A function can be defined in 3 ways.
 fn moving(self);
 ```
 
-is a *moving* function.  This means that the ownership of the thing is transferred to the function.  e.g.
+is a *moving* function.  This means that the ownership of the thing is transferred into the function.  (So a lot like a moving closure)  e.g.
 
 ```rust
 #[derive(Debug)]
@@ -699,13 +704,67 @@ fn main() {
 }
 ```
 
-This has the consequence that *you cannot call a moving method on a variable that is known only to implement a trait*, which is somewhat nonintuitive.  It's because you need to know the size of the underlying type in order to call the moving function.
+This has the consequence that *you cannot call a moving method on a variable that is known only to implement a trait*, which is somewhat nonintuitive.  It's because you need to know the size of the underlying type in order to call the moving function.  But we do not know the size, we know only that it implements some trait.
 
 # Generics
 
 Swift's generics and Rust's generics are very very similar.
 
-One difference is that Swift's generic specialization is an implementation detail.  Whereas Rust is guaranteed to use monomorphization.
+One difference is that Swift's generic specialization is an implementation detail.  Whereas Rust is guaranteed to use monomorphization to completely specialize the generic.
 
 In layman's terms, this means that the Rust compiler emits different code to implement `Vec<i32>.append(2)` than for `Vec<i64>.append(2)`.  This increases the size of your program, *but* ensures that these functions are always *statically* dispatched.  That provides some performance guarantees that Swift does not.
 
+After pondering that for 10 minutes, you may wonder: how is that possible?  You could have a library with some generic function `MyFunc<T>(t: T)` and then you call that library from a completely different program, maybe on types that the library did not know about.  How then does the library contain a specialization for a type that it doesn't know anything about?
+
+The answer is that the rust `rlib` format, in addition to native code, contains a kind of bytecode for generic functions.  So when you go to compile your program, that calls `MyFunc` on special types, the compiler can emit new specializations of the function in that already-compiled library.  Pretty neat, huh?
+
+Paging Chris Lattner.
+
+# Semicolons
+
+with Swift, semicolons are optional, except if you have multiple statements on a line.
+
+In Rust, semicolons are generally required, but actually there is a trick.  
+
+A line that ends in a semicolon evaluates to `()`, which is pronounced *unit* and is basically the equivalent of C's `void`.  Meanwhile, a line without a semicolon evaluates to something else, generally.  So
+
+```rust
+fn test() -> i32 {
+    3
+}
+```
+
+returns 3 whereas
+
+```rust
+fn test() -> i32 {
+    3;
+}
+```
+
+does not compile.
+
+You can also use `return 3;` but people will think you are a lamer if you end your function that way.  It is a little weird at first, but if you are doing a lot of `return function_call()` it is actually pretty handy just to write `function_call()` instead.  (On the other hand if later want to add more stuff to the end of your function it is not as fun.)
+
+Note that Swift does have some concept of implicit returns, for short closures.  For example this:
+
+```swift
+let sema = dispatch_semaphore_create(0);
+dispatch_async(dispatch_get_main_queue()) {
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER)
+}
+```
+
+actually fails to compile.  Because secretly `dispatch_semaphore_wait` returns `Int`, and in Swift 1-line closures automatically return whatever the line evalutes to.  Generally you fix this by adding return:
+
+```swift
+let sema = dispatch_semaphore_create(0);
+dispatch_async(dispatch_get_main_queue()) {
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER)
+    return
+}
+```
+
+to force the closure to return `void`.
+
+Rust however does not change the rules depending on length like Swift does.  **All functions return the last line regardless of length**.  If the last line ends with a semicolon your function will return `()` and if not it will return whatever that line was.
