@@ -836,7 +836,7 @@ Just for fun, I'll break this down:
 
 `fn scoped<'a, T, F>` a function that will use generic parameters `T` and `F`, and lifetime parameter `'a`.  We are making up names here; they do not mean anything yet.
 
-`(f: F) -> JoinGuard<'a, T>` taking one parameter `f` (of type `F`) and returning a JoinGuard with lifetime `'a` and of type `T`.  The `T` will be the return type of the closure.
+`(f: F) -> JoinGuard<'a, T>` taking one parameter `f` (of type `F`) and returning a `JoinGuard` with lifetime `'a` and of type `T`.  The `T` will be the return type of the closure.
 
 
 `where T: Send + 'a`  Where `T` has the `Send` trait (indicating that we can move it onto a new thread.  Nearly all types have this, but some C types do not.) and lifetime `'a`.  Importantly, we are saying here that the `JoinGuard` and `T` have the same lifetime, that is, that the `T` is not going to vanish while it is inside some `JoinGuard`.
@@ -847,7 +847,7 @@ Just for fun, I'll break this down:
 
 As a result you cannot capture anything in the closure that does not definitely exist until the JoinGuard is destroyed, and the JoinGuard will wait for the thread to complete, meaning that our function will block until the thread is done.
 
-If you come from a Swift background, that is probably not what you expected.  You expected to start a thread and then the function would return.  You can in fact do that, if you return *the `JoinGuard`*.  But at some point you have to wait on the JoinGuard.
+If you come from a Swift background, that is probably not what you expected.  You expected to start a thread and then the function would return.  You can in fact do that, if you return *the `JoinGuard`*.  But at some point you have to wait on the `JoinGuard`.
 
 ## Spawn
 
@@ -875,9 +875,15 @@ The function signature of `spawn` is also a lot simpler:
 pub fn spawn<F>(f: F) -> JoinHandle where F: FnOnce(), F: Send + 'static
 ```
 
-The difference here is that `F` gets the special lifetime `'static`.  (Again in the context of closures, the lifetime applies to the environment.)  Here we are saying that the environment must contain only static data (like global constants) (or data moved into the closure).  It cannot contain for example a borrowed reference, unless that borrowed reference is to something `'static`, because what if the borrowed reference goes out of scope.
+The difference here is that `F` gets the special lifetime `'static`.  (Again in the context of closures, the lifetime applies to the environment.)  Here we are saying that the environment must contain only static data (like global constants), or data moved into the closure.  It cannot contain for example a borrowed reference, unless that borrowed reference is to something `'static`, because what if the borrowed reference goes out of scope.
 
 And that's the real trick.  Swift programmers are used to putting all kinds of things in closures, but Rust takes a dim view.  Generally speaking, there are a few solutions:
+
+### Clone
+
+You could `clone` the borrowed reference, and then move in the clone.  This works pretty well for immutable data.
+
+One gotcha is that the type itself must implement `clone`.  By default, calling `clone()` does something [kind of stupid](http://stackoverflow.com/questions/28816426/copying-a-struct-for-use-on-another-thread/28816987?noredirect=1#comment45906109_28816987), so unless someone has manually derived the `Clone` trait, or unless it's in a place where you can easily do it, it kind of sucks.  
 
 ### Arc and a Mutex:
 
