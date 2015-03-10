@@ -15,6 +15,23 @@ Other tutorials cover things I already know, because I know Swift (another high-
 
 If you are trying to go from Rust to Swift, this guide might also be useful, since it explains one in terms of the other, but I make no guarantees.
 
+I'm not going to cover basic things like `func` => `fn`, `!` => `unwrap()` and so on.  For simple things like that, try
+
+* [the book](http://doc.rust-lang.org/book/)
+* [rust by example](http://rustbyexample.com/index.html)
+* The [standard library reference](http://doc.rust-lang.org/std/)
+* [An alternate introduction to Rust](http://words.steveklabnik.com/a-new-introduction-to-rust), for a basic lifetime guide
+
+Instead I'm going to cover the "hard stuff".  The stuff that I spent hours banging my head against the wall about, and I could not find any good resources for.
+
+* How to fight the borrow checker and win
+* Closures and the memory model, in depth
+* OO programming without objects
+* Understanding the "selfish" functions (`self`, `&mut self`, `&self`), and their semantics, in depth
+* Grab bag of "medium-sized" topics that may be of interest to Swift programmers: generics, semicolons, visibility, static dispatch
+
+Let's start with the type system.
+
 # Value Types
 
 In Swift, we have value types (Structs/Enums) and reference types (Classes).  They are "on the same level" in the sense that, they are both fundamental types.
@@ -512,7 +529,7 @@ Although the output may be unexpected:
 
 This is because **moving closures in Rust have different environments**.  A moving closure (e.g. `move || {...}`) essentially works from a cloned environment, frozen in time exactly as it was when the closure was declared.
 
-Swift closures, in contrast, have shared environments.  Making changes to the environment in one closure may effect another closure that shares the environment.
+Swift closures, in contrast, have shared environments.  Making changes to the environment in one closure may affect another closure that shares the environment.
 
 Rust's non-moving closures (e.g. `|| {...}`) technically have a shared environment, but it is hard to notice, because the borrow checker makes it difficult for 2 closures to read and write to the same parts of the environment.  As we saw in this example.
 
