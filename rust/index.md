@@ -75,7 +75,7 @@ test.rs:4     println!("{:?}",a);
 
 The Rust semantics in this code are sort of novel.  The line
 
-```
+```rust
     let b = a;
 ```
 
@@ -118,7 +118,7 @@ It's important to distinguish between reference and value types *semantically* v
 
 In C for example, when we say "pass-by-value" what we really mean is "pass-with-copy".  Whereas pass-by-reference is "pass-without-copy".  And so people pass references around in C, not necessarily because they have to for some semantic reason, but because it is fast.
 
-However, this view does not hold true for Swift and Rust.  "pass-by-value" can be zero-copy, or it can be copy-on-write, or something like that.  Pass-by-reference is not necessarily faster than pass-by-value.  Use the semantics that make sense for your program, and do not work on the presumption that one is faster than the other.
+However, this view does not hold true for Swift and Rust.  "pass-by-value" can be zero-copy (if it's immutable), or it can be copy-on-write (if it's mutable), or something like that.  There is not always a copy.  Pass-by-reference is not necessarily faster than pass-by-value.  Use the semantics that make sense for your program, and do not work on the presumption that one is faster than the other.
 
 # Traits
 
@@ -655,23 +655,42 @@ fn main() {
 
 # Visibility
 
-Visibility in Rust is a little different than Swift.  Swift has three visibilitiy modifiers:
+Swift's namespaces are kind of a joke.  You say `import Framework` and all of a sudden you get all of `Framework`'s classes into your current scope.  You can technically reference them with `Framework.Class`, but nobody does.
+
+Rust on the other hand works on the basis of *modules*.  A file is a module.  Modules can contain other modules. Rust's *crate* (like a Swift *target*) is a module.  It's modules all the way down.
+
+This means that stuff in Rust is much more hierarchically organized, even within a crate (target).  You are not just dumping every class from some framework into your current scope.  You are grabbing some module in some module in the framework, and using only that.  Even within your program, you are importing only a little bit of the rest of the program; not all of it.
+
+Swift has three visibilitiy modifiers:
 
 * `private`, which is *file-visible*
-* `internal`, which is *target*-visible.  This is also the default.
-* `public`, which is *globally*-visible
+* `internal`, which is *target*-visible, exporting your thing everywhere in the target, and no imports are required to use it anywhere in the target.  This is the default.
+* `public`, which is *globally*-visible.  This is `internal`, *plus*, it exports the symbol, so that it is useable by anyone linking to the library.  Of course, this requires external programs to explicitly import your library.
 
-In Rust however, it's a little different.  The fundamental visibility unit is a *module*.  A file is a module, and modules are recursively composeable, so they can contain other modules, and so on.  It's turtles all the way down.  Unlike Swift, where you really have file and target as fundamentally distinct organizational units.
-
-Rust has a notion of a target, which they call a `crate`.  But it is really just "a module that you build".  So everything is modules.
-
-As a consequence, Rust has only two visibility modifiers:
+As a consequence of its hierarchical namespacing, Rust has only two visibility modifiers:
 
 * the default, which is visible *within the current module*
 * `pub`, which is exported to the parent module
 
-There is no way to declare a function "target-visible" (crate-visible) or "globally-visible" as such.  Instead you declare it `pub`, and then you declare the module containing it `pub` in its parent module, and then that module `pub` in its parent module, and so on, until the thing has the visibility that you want.
+There is no way to declare a function "target-visible" (crate-visible) or "globally-visible" as such.  Instead you declare it `pub`, and then you declare the module containing it `pub` in its parent module, and then that module `pub` in its parent module, and so on, until it's visible enough.  There has to be an unbroken link of `pub` between the user and where it's declared, for it to work.
 
+I don't know why you would want to, but you can approximate Swift's flat namespacing by using `pub use`.  It's like regular `use` (which is like Swift's `import`), but it also exports the symbol.  So
+
+```rust
+//in library::module
+pub fn foo() { ... }
+```
+
+```rust
+//in library
+pub use module::foo; //re-export foo in the library namespace
+```
+
+```rust
+//in application
+use library;
+library::foo(); //now part of library namespace
+```
 
 # Properties
 
