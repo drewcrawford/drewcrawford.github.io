@@ -29,7 +29,7 @@ Enums are practically the same in both languages.  One difference is that Rust u
 
 Rust's structs are also very similar to Swift structs.  The differences are, as best as I can tell:
 
-1.  The `struct` itself contains only the *fields*.  The functions are contained in a separate block called `impl for StructName`.  This is a lot like ObjC's `@interface` and `@implementation` separation, but unlike ObjC they are generally contained in the same file.
+1.  The `struct` itself contains only the *fields*.  The functions are contained in a separate block called `impl StructName`.  This is a lot like ObjC's `@interface` and `@implementation` separation, but unlike ObjC they are generally contained in the same file.
 2.  Right before the struct declaration you can include a set of lines like `#[derive(Clone)]`.  The presence of this line magically writes an implementation for the `Clone` trait.  More info on this later.
 
 # Reference Types
