@@ -128,6 +128,8 @@ This compiles.  Important changes include the use of `clone()`.  `clone()` retur
 
 There is another difference here, that has to do with memory management.  In Swift's case, whether reference counting is used is an implementation detail.  That is, the compiler inserts the retain/release calls.  If the number of strong pointers is small, it may omit reference counting calls, or include them, as it decides.  In Rust, `retain` is explicit:  you call `clone` on an `Rc`.  So you control when this happens, not the compiler.  (`release` is what happens when your variable goes out of scope, so that is implicit, like Swift.)
 
+Finally, `Rc` (and `Arc`) give you access to an `&T`, whereas `Box` can also give you access to an `&mut T`.  This has something to do with Rust's memory safety; there can only be one mutable pointer.  If you need more than one mutable pointer in an `Rc`, you can try `Rc<Cell<T>>`.
+
 # Arc
 
 Rust has a final reference wrapper type, called `Arc`.  It is better to assume that this is nothing like the Swift technology ARC.
@@ -137,6 +139,8 @@ It is basically the same as `Rc`, except `clone` is implemented with an atomic i
 You may wonder why Rust has all these types for what is essentially the same thing in Swift, and what it comes down to is performance and control.  Swift takes the view that whether or not something has multiple strong pointers is something that the compiler should figure out during an optimization pass.  And so Swift does not make you worry about such things, although there are cases where it is overly cautious and you spend a little time waiting for an atomic instruction that is not strictly necessary.
 
 Rust takes the view that this is the programmer's responsibility.  And so you are actually opting into multiple strong pointers, and atomics.  That can produce faster code in some cases, although it is a lot more work.
+
+Finally, `Arc` (and `Rc`) give you access to an `&T`, whereas `Box` can also give you access to an `&mut T`.  This has something to do with Rust's memory safety; there can only be one mutable pointer.  If you need more than one mutable pointer in an `Arc`, you can try `Arc<Mutex<T>>`.
 
 ## A word on thread safety
 
@@ -257,6 +261,8 @@ read!() //"Test"
 write!() 
 read!() //"Whatever"
 ```
+
+Author's note: this is both bad Swift and bad Rust, but it uses a surprising number of language features, so we'll roll with it.
 
 It is sort of odd to see that our `read` and `write` closures can still access `str` even though that variable is out of scope.  If this was C, our `str` would no longer be on the stack frame--it would be gone somewhere.  In Swift however, `str` continues to exist as long as some closure still exists that needs it.  It is not tied to some particular stack frame.
 
