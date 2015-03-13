@@ -132,15 +132,15 @@ There is another difference here, that has to do with memory management.  In Swi
 
 Rust has a final reference wrapper type, called `Arc`.  It is better to assume that this is nothing like the Swift technology ARC.
 
-It is basically the same as `Rc`, except `clone` is guarded by a Mutex (and thus is threadsafe).    Swift's retain/release system on the other hand is always threadsafe, and you cannot get a mutexless version.
+It is basically the same as `Rc`, except `clone` is implemented with an atomic increment instruction (and thus is threadsafe).    Swift's retain/release system on the other hand is always threadsafe, and you cannot get a non-atomic version.
 
-You may wonder why Rust has all these types for what is essentially the same thing in Swift, and what it comes down to is performance and control.  Swift takes the view that whether or not something has multiple strong pointers is something that the compiler should figure out during an optimization pass.  And so Swift does not make you worry about such things, although there are cases where it is overly cautious and you spend a little time waiting for a mutex to unlock that is not strictly necessary.
+You may wonder why Rust has all these types for what is essentially the same thing in Swift, and what it comes down to is performance and control.  Swift takes the view that whether or not something has multiple strong pointers is something that the compiler should figure out during an optimization pass.  And so Swift does not make you worry about such things, although there are cases where it is overly cautious and you spend a little time waiting for an atomic instruction that is not strictly necessary.
 
-Rust takes the view that this is the programmer's responsibility.  And so you are actually opting into multiple strong pointers, and mutexes.  That can produce faster code in some cases, although it is a lot more work.
+Rust takes the view that this is the programmer's responsibility.  And so you are actually opting into multiple strong pointers, and atomics.  That can produce faster code in some cases, although it is a lot more work.
 
 ## A word on thread safety
 
-"Forgetting to use a Mutex" may scare some Swift programmers.  The reality however is that in Rust you cannot "just" forget a mutex and so get into a thread bug situation.  Instead, your program won't compile.  So it is not really that scary.
+"Forgetting to use atomics" may scare some Swift programmers.  The reality however is that in Rust you cannot "just" forget an atomic and so get into a thread bug situation.  Instead, your program won't compile.  So it is not really that scary.
 
 ## A word on performance of reference and value types
 
