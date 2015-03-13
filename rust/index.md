@@ -890,7 +890,7 @@ pub fn scoped<'a, T, F>(f: F) -> JoinGuard<'a, T> where T: Send + 'a, F: FnOnce(
 
 Just for fun, I'll break this down:
 
-`fn scoped<'a, T, F>` a function that will use generic parameters `T` and `F`, and lifetime parameter `'a`.  We are making up names here; they do not mean anything yet.
+`fn scoped<'a, T, F>` a function that will use generic parameters `T` and `F`, and generic lifetime parameter `'a`.  We are making up names here; they do not mean anything yet.
 
 `(f: F) -> JoinGuard<'a, T>` taking one parameter `f` (of type `F`) and returning a `JoinGuard` with lifetime `'a` and of type `T`.  The `T` will be the return type of the closure.
 
