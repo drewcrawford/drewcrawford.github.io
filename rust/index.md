@@ -5,7 +5,19 @@ title: A Swift guide to Rust
 
 I needed to onboard to Rust recently for a project.  Here is the guide that I wanted.
 
-# Background
+# Why Rust
+
+Mostly because I needed a high-performance language that was cross-platform.  By high-performance really I mean "not GCed".  By cross-platform I mean it works on both iOS and 64-bit Linux.
+
+Within those constraints you basically have C11, C++11, and Rust.  (Swift is not cross-platform.  ObjC is sort of, but it's not well-supported.)  I hate C++ on principle, so that was out.  I know C11 quite well, but my problem was such that a more "modern" language would be a help.  So I picked Rust.
+
+## How is it?
+
+It's okay.  Really what most people want to know is "is it really safer?" and the answer is "yes, but the cost is high."  Using Rust has caught, perhaps, 10s of bugs that even very well-unit-tested C11 (or Swift) would not have caught.  The trouble is that I spend roughly 25% of my development time wrestling with the compiler to achieve that safety.  Is it worth it?  Maybe, for some programs.
+
+To me, Rust is sort of a coincidence.  What I really want is a C++ that doesn't suck.  But you can produce a better C++ while drunk.  Rust has, IMHO, produced it.  But it is not better because it is safer, it is better because it's not mind-numbingly stupid.  Insofar as a lot of attention in the language design is focused on safety at the expense of everything else, I find it annoying.  But not as annoying as C++.
+
+# Methodology
 
 I'm an advanced Swift developer but I'm still learning Rust.  So some things might be wrong.  Send me a [PR on GitHub](https://github.com/drewcrawford/drewcrawford.github.io/pulls).
 
@@ -537,7 +549,7 @@ Rust's non-moving closures (e.g. `|| {...}`) technically have a shared environme
 
 # Arrays
 
-Rust's arrays are of fixed size, and the array is in fact part of the array's type: `[i32; 2]` means 2, 32-bit ints.  A mutable array in Rust means that the elements can be swapped.  But elements cannot be appended, because the array size is fixed.
+Rust's arrays are of fixed size, and the size is in fact part of the array's type: `[i32; 2]` means 2, 32-bit ints.  A mutable array in Rust means that the elements can be swapped.  But elements cannot be appended, because the array size is fixed.
 
 Rust's `Vec` type is dynamically-sized and therefore is closer to the Swift array.
 
@@ -714,6 +726,8 @@ library::foo(); //now part of library namespace
 
 Rust has no concept of Swift properties.  You have fields and functions, and that's it.
 
+You could probably roll your own with the preprocessor, if that's your cuppa tea.
+
 # Dispatch
 
 Swift's dispatch is largely an implementation detail, but is mostly static, unless you opt-in with `@dynamic` or `@objc`.
@@ -792,7 +806,7 @@ dispatch_async(dispatch_get_main_queue()) {
 }
 ```
 
-actually fails to compile.  Because secretly `dispatch_semaphore_wait` returns `Int`, and in Swift 1-line closures automatically return whatever the line evalutes to.  Generally you fix this by adding return:
+actually fails to compile.  Because secretly `dispatch_semaphore_wait` returns `Int`, and in Swift 1-line closures automatically return whatever the line evalutes to, but `dispatch_async` wants a closure that returns `void`.  Generally you fix this by adding return:
 
 ```swift
 let sema = dispatch_semaphore_create(0);
