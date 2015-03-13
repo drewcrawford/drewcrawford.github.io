@@ -820,6 +820,13 @@ to force the closure to return `void`.
 
 Rust however does not change the rules depending on length like Swift does.  **All functions return the last line regardless of length**.  If the last line ends with a semicolon your function will return `()` and if not it will return whatever that line was.
 
+Since `if` is an expression in Rust, not a statement, clever semicolon placement allow its use as an rvalue:
+
+```rust
+let y = if (x > 0) { 10 } else { compute(x) };
+```
+
+
 # Threading
 
 If you are used to Swift, you are probably doing a lot of `dispatch_async`, often.  Unfortunately... Rust takes a dim view of this.
