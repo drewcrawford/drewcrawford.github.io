@@ -64,7 +64,7 @@ Rust's structs are also very similar to Swift structs.  The differences are, as 
 
 # Reference Types
 
-In Swift a reference type is declared with `class`.  Rust does not really have a notion of this.  Instead, there are three "reference wrappers" that turn a value type into a reference type.
+In Swift a reference type is declared with `class`.  Rust does not really have a notion of this.  Instead, there are three "reference wrappers" that turn a value type into a reference type.  These "wrappers" are part of the standard library, not part of the language itself.
 
 Note that in all cases, you get reference semantics *by wrapper*, so this is something that the *user* of the type does, not specified by the *type itself*.  Whereas in Swift `class` causes the *type itself* to be a reference.  In Rust, over here we can use something as a reference type with a wrapper, and somewhere else we can use it as a value type without a wrapper.  Value types are fundamental; reference types are glued on the top.
 
