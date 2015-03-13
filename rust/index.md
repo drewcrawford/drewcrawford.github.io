@@ -552,6 +552,35 @@ Swift closures, in contrast, have shared environments.  Making changes to the en
 
 Rust's non-moving closures (e.g. `|| {...}`) technically have a shared environment, but it is hard to notice, because the borrow checker makes it difficult for 2 closures to read and write to the same parts of the environment.  As we saw in this example.
 
+If you wanted to match the original semantics for some reason, here's a working solution:
+
+```rust
+fn main() {
+    let mut write  = None;
+    let mut read = None;
+    {
+        let mut test = || {
+            let str = Rc::new(Cell::new("Test"));
+            write = {
+                let str = str.clone();
+                Some(move || {
+                    str.set("Whatever");
+                })
+            };
+            read = Some(move || {
+                println!("{:?}", str.get());
+            });
+        };
+        test();
+    }
+    let read = read.unwrap();
+    read();
+    write.unwrap()();
+    read();
+}
+```
+
+Note that the Rust code is a lot more explicit about what is going to happen than the Swift code is.  The Swift behavior surprises advanced developers, and for that reason makes a good interview question.  This Rust code's output is predictable by more people.
 
 # Arrays
 
