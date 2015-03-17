@@ -804,7 +804,7 @@ After pondering that for 10 minutes, you may wonder: how is that possible?  You 
 
 The answer is that the rust `rlib` format, in addition to native code, contains a kind of bytecode for generic functions.  So when you go to compile your program, that calls `MyFunc` on special types, the compiler can emit new specializations of the function in that already-compiled library.  Pretty neat, huh?
 
-Paging Chris Lattner.
+Actually, Swift does this too, although the only place you'll see that documented is this guide.
 
 # Semicolons
 
