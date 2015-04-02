@@ -31,4 +31,4 @@ Of course, "vending machines that operate themselves" is really a stand-in for "
 
 Looking at bitcoin in terms of a currency is like looking at the iPhone in terms of a phone.  You're asking all the wrong questions.  I don't care whether bitcoin ever becomes a currency that people use to buy things, as if "people buying things" is the only category or even the most important category of economic activity that can exist.  Asking how bitcoin facilitates existing transactions is like asking how the Internet helps print journalism.  It has not come to help at all, but to destroy.  It has come to replace the old way with a mildly terrifying, but more convenient future.  With complicated policy implications that we will debate but that in the end doesn't matter because it's going to happen either way.
 
-Bitcoin is not "better money" you use to buy stuff.  In soviet russia, bitcoin buys you.
+Bitcoin is not what you use to buy stuff.  In soviet russia, bitcoin buys you.
