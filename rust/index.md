@@ -233,7 +233,205 @@ impl<T> MyProtocol for Box<T> {
 
 (Contrawise to a Swift class extension, which cannot be overriden.)
 
+## Traits as *not* multi-inheritance
+
+Sadly, there is no clear path to multi-inheritance with traits.  If we have
+
+```rust
+trait Circle: Shape {
+    
+}
+```
+
+Then we are saying that all `Circle`s are `Shape`s.  We are *not* saying however that all `Circle`s are `Shape`s *automatically*.  Instead we are explaining to the compiler that for every `struct` which implements `Circle` we will also implement `Shape`.
+
+Generally for this problem, one of several approaches are taken:
+
+1.  Preprocessor macros to supply an implementation of `Shape`
+2.  Use [associated items](http://stackoverflow.com/a/29292642/116834)
+3.  Use structs instead.  `struct Circle` with a pointer to a `Shape` struct.
+4.  Comment on [this issue](https://github.com/rust-lang/rfcs/issues/1024)
+
 Overall traits are an interesting idea, and unify a lot of concepts that in Swift would be separate into a single tool.
+
+# `impl` syntax
+
+One puzzling bit to new programmers is the verbosity of `impl`:
+
+```rust
+impl<'a, K, V> for Struct<'a, K, V> { }
+```
+
+`K` and `V` are generic parameters, so that is not so bad.  `'a` is a *lifetime*, which is a Rust-specific concept we will talk about shortly, but syntactically it is similar to a generic type.
+
+The puzzling thing about this is that the list `<'a, K, V>` appears twice instead of once.   The reason is that `impl` can do more than just implement a struct.  It can implement a trait for a struct:
+
+```rust
+impl<'a, K, V, A, B> MyTrait<A,B> for Struct<'a, K, V> { }
+```
+
+...for only certain kinds of parameters:
+
+```rust
+impl<'a, K, V, A, B> MyTrait<A,B> for Struct<'a, K, V>  where A: Foo, B: Bar + 'a, K: Baz<A>, V: Qux<quux=Corge> { ... }
+```
+
+The meaning of this is that the trait is implemented when these constraints are satisfied, and is not implemented in other cases.  Note that it is currently difficult to provide many implementations for the same trait because it is hard to ensure that the conditions for which they are implemented do not overlap.  This problem is called the [negative trait bounds problem](https://github.com/rust-lang/rfcs/pull/586).
+
+This last case deserves some explaining.  Note that we can say either `impl<K: Foo>` or `impl<K> ... where K: Foo`.  I think the `where` syntax is newer and designed to be more extensible.
+
+When we say `K: Baz<A>` we mean `K` implements a trait, where the generic parameter of that trait is A.  
+
+When we say `V: Quz<quux=Corge>` we mean `Q` implements a trait, where the trait's *associated item `quux`* takes the value `Corge`.  [Associated items](https://github.com/rust-lang/rfcs/blob/master/text/0195-associated-items.md) are basically identical to Swift's [associated types](http://www.russbishop.net/swift-associated-types) so I will not say any more about them, other than to point out the syntactical differences.
+
+# Lifetimes
+
+You should read [An alternate introduction to Rust](http://words.steveklabnik.com/a-new-introduction-to-rust) to get the "scopes" understanding of lifetimes, but I'm going to give a complementary understanding that explains some of the practical implications.
+
+In Swift, we say
+
+```swift
+struct MyStruct {
+    foo: NSObject()
+}
+```
+
+In this case `MyStruct` has a strong pointer to `Foo`.  Pointers are something of an implementation detail in Swift, but since `NSObject` comes from ObjC we know that `NSObject` is heap-allocated and therefore `foo` is a pointer, not embedded in the struct itself.  
+
+(Objects that are defined in Swift, on the other hand, are not defined to be heap-allocated nor stack-allocated, so in that case whether or not a pointer is used is an implementation detail.)
+
+For a literal Rust translation there is no ambiguity on this question; a pointer is not used.
+
+```rust
+struct MyStruct {
+    foo: Foo,  
+};
+```
+
+here `foo` is an actual field in our struct, that is, the entire `foo` is placed in the struct's memory.  The implication is, in this Rust code the size of `MyStruct` grows with the size of `Foo`, whereas in the Swift code, the pointer to `NSObject` is always constant size because pointers are the same size everywhere on your computer.  
+
+As a corrolary, the Rust compiler must be able to figure out the size of `Foo` to declare `MyStruct`.  If `Foo` is a trait (which could be implemented by structs of various sizes) then we cannot work out the memory layout of `MyStruct` and thus it cannot be defined.
+
+A more idiomatic translation is to tell Rust to use a pointer to `Foo`, which in Rust is an explicit thing:
+
+```rust
+struct MyStruct {
+    foo: &Foo,  
+};
+```
+
+This behaves as you would expect, and as a corrolary `Foo` can now be a struct (although there are some interesting implications, see the section on Dispatch below).
+
+One puzzle though is what it means to have
+
+```rust
+let m : MyStruct = ...
+(*m.foo).doFoo();
+```
+
+From a C perspective there are *in theory* 3 possibilities for what this can mean:
+
+1.  if `m.foo` is unitialized then the behavior is undefined.  However both Swift and Rust require elements of structs (classes) to be initialized in all cases (well, unless you have "initialized" it to `mem::unitialized`)
+2.  `m.foo` points to a valid value, whether on the heap or the stack
+3.  `m.foo` points to a formerly valid value, but it has gotten blown away.  Like the artist formerly known as Prince.
+
+The languages handle case 3 very differently, which I will now explain in some detail.
+
+## Swift ARC and pointer memory classes
+
+In Swift, pointers have *memory classes* that explain how we handle this case.
+
+By default pointers are `strong`.  This means that as long as the pointer exists, the value it points to will also.
+
+It is important to understand how this is implemented.  When we say:
+
+```swift
+{
+    let j = NSObject()
+    //stuff
+}
+```
+
+it is equivalent to
+
+```swift
+{
+    let j = NSObject().retain()
+    //stuff
+    j.release()
+}
+```
+
+When I say "is equivalent to", it is important to understand that the compiler has broad latitude in how to optimize these calls.  It may omit them if it can prove it is safe.  But you shouldn't notice.
+
+`retain` and `release` here increment and decrement the *reference count* of our object.  It is incremented when a strong pointer is created and it is decremented when the strong pointer goes away.  When all strong pointers go away, the object is deallocated.
+
+Swift also has a `weak` pointer class with semantics that A) we do not increment the *reference count* when a weak pointer is created and B) if the reference count becomes zero, the pointer takes on the value `nil` (`None`).  As a consequence, the `weak` class can only be used for optional types.
+
+Finally, Swift has an `unowned` pointer class with semantics that A) we do not increment the *reference count* when an unowned pointer is created and B) if the reference count becomes zero and you try to access it, your program will deterministically crash.
+
+In summary, there are two very important bits to understand here:
+
+1.  That the `retain` and `release` calls are inserted by the compiler, that is, ARC is a compile-time technology
+2.  That the actual reference counting behavior is a runtime behavior
+3.  Although there is some runtime stuff going on, it is *deterministic*.  We can be certain that an object will be deallocated when all strong pointers blow away (with very minor transpositions for compiler optimizations), not batched up later, like garbage collection
+
+## Rust and lifetimes
+
+Rust lifetimes exist to solve the same problem that Swift pointer memory classes do: ensure that you do not have pointers to objects that have been blown away.  In practice, however, the implementation is different.
+
+In Swift, this is enforced through a mix of compiler-time and run-time behavior.  Function calls are inserted automatically at compile-time; they are executed at runtime.
+
+In Rust on the other hand, you simply state what should happen, and the compiler checks to see if you did it.  For example:
+
+```rust
+struct MyStruct<'a> {
+    foo: &'a Foo
+}
+```
+
+Says `MyStruct.foo` will always be valid, that is, the `foo` will not vanish out from under us.  *But it does not explain how this is enforced.*  That is because you must enforce it yourself.  The compiler will check your work, but it will not lift a finger to help you.
+
+To enforce it, you generally have to demonstrate to the compiler that the constraint is met.  For example in this code:
+
+
+```rust
+let f = Foo;
+let j = MyStruct{ foo: &f};
+```
+
+We can see right away that f will not become a dangling pointer.  However if we did something like this:
+
+```rust
+let mut j: MyStruct;
+{
+    let f = Foo;
+    j = MyStruct{ foo: &f}
+} // f goes poof
+j.foo();
+```
+
+Then the compiler will say "now wait a minute, this constraint isn't satisfied."
+
+There are cases when the compiler is dumb and it does not know the constraint is met even though it is.  Generally in those cases, the secret is to explain to the compiler about lifetimes, so that it understands what we are doing.  If we have `box: Box<Foo>` and `MyStruct` then the compiler doesn't know if `MyStruct.foo = box;` is legal, because what if the box blows away before the `MyStruct`.  But if we have `box: 'd Box<Foo>` and `&'d MyStruct` then we know the assignment is okay, because we have asserted the box cannot blow away before the `MyStruct`.
+
+One last point.  lifetimes "flow" from a struct to its members:
+
+```rust
+struct MyStruct<'a> {
+    foo: &'a Foo,
+}
+```
+
+They also "flow" from a function to its return values:
+
+```rust
+fn foo(&'a Foo) -> &'a Foo;
+```
+
+Here we mean that the return value will not outlast the parameter.  This might be useful for returning a "view" of the input.  For example, we have a string, and we return a substring.  Rust can do this without a copy, like C.
+
+Unlike C, it is safe, because back at the callsite somebody checks to see if the return value lasts longer than the parameters.  
 
 # Closures
 
