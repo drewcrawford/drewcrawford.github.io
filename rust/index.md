@@ -296,7 +296,7 @@ struct MyStruct {
 }
 ```
 
-In this case `MyStruct` has a strong pointer to `Foo`.  Pointers are something of an implementation detail in Swift, but since `NSObject` comes from ObjC we know that `NSObject` is heap-allocated and therefore `foo` is a pointer, not embedded in the struct itself.  
+In this case `MyStruct` has a strong pointer to `foo`.  Pointers are something of an implementation detail in Swift, but since `NSObject` comes from ObjC we know that `NSObject` is heap-allocated and therefore `foo` is a pointer, not embedded in the struct itself.  
 
 (Objects that are defined in Swift, on the other hand, are not defined to be heap-allocated nor stack-allocated, so in that case whether or not a pointer is used is an implementation detail.)
 
@@ -320,7 +320,7 @@ struct MyStruct {
 };
 ```
 
-This behaves as you would expect, and as a corrolary `Foo` can now be a struct (although there are some interesting implications, see the section on Dispatch below).
+This behaves as you would expect, and as a corrolary `Foo` can now be a trait (although there are some interesting implications, see the section on Dispatch below).
 
 One puzzle though is what it means to have
 
@@ -335,7 +335,7 @@ From a C perspective there are *in theory* 3 possibilities for what this can mea
 2.  `m.foo` points to a valid value, whether on the heap or the stack
 3.  `m.foo` points to a formerly valid value, but it has gotten blown away.  Like the artist formerly known as Prince.
 
-The languages handle case 3 very differently, which I will now explain in some detail.
+The languages handle the third case very differently, which I will now explain in some detail.
 
 ## Swift ARC and pointer memory classes
 
@@ -374,7 +374,7 @@ In summary, there are two very important bits to understand here:
 
 1.  That the `retain` and `release` calls are inserted by the compiler, that is, ARC is a compile-time technology
 2.  That the actual reference counting behavior is a runtime behavior
-3.  Although there is some runtime stuff going on, it is *deterministic*.  We can be certain that an object will be deallocated when all strong pointers blow away (with very minor transpositions for compiler optimizations), not batched up later, like garbage collection
+3.  Although there is some runtime stuff going on, it is *deterministic*.  We can be certain that an object will be deallocated when all strong pointers blow away (with very minor transpositions for compiler optimizations) (not batched up later like garbage collection)
 
 ## Rust and lifetimes
 
@@ -413,6 +413,8 @@ j.foo();
 
 Then the compiler will say "now wait a minute, this constraint isn't satisfied."
 
+It is important to emphasize one other fact.  All pointers have lifetimes in Rust, whether there is a little `'a` there or not.  The difference is, some lifetimes are figured out automatically (called *elided*) and other times you explain what they are.  Generally then, battling the borrow checker is an exercise in overriding elided lifetimes with explicit ones.
+
 There are cases when the compiler is dumb and it does not know the constraint is met even though it is.  Generally in those cases, the secret is to explain to the compiler about lifetimes, so that it understands what we are doing.  If we have `box: Box<Foo>` and `MyStruct` then the compiler doesn't know if `MyStruct.foo = box;` is legal, because what if the box blows away before the `MyStruct`.  But if we have `box: 'd Box<Foo>` and `&'d MyStruct` then we know the assignment is okay, because we have asserted the box cannot blow away before the `MyStruct`.
 
 One last point.  lifetimes "flow" from a struct to its members:
@@ -429,7 +431,7 @@ They also "flow" from a function to its return values:
 fn foo(&'a Foo) -> &'a Foo;
 ```
 
-Here we mean that the return value will not outlast the parameter.  This might be useful for returning a "view" of the input.  For example, we have a string, and we return a substring.  Rust can do this without a copy, like C.
+Here we mean that the return value will not outlast the parameter.  This might be useful for returning a "view" of the input.  For example, we have a string, and we return a substring, where the substring is something like `&string[2]` in C, that is, a pointer to some element.
 
 Unlike C, it is safe, because back at the callsite somebody checks to see if the return value lasts longer than the parameters.  
 
