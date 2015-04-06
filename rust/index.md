@@ -310,7 +310,7 @@ struct MyStruct {
 
 here `foo` is an actual field in our struct, that is, the entire `foo` is placed in the struct's memory.  The implication is, in this Rust code the size of `MyStruct` grows with the size of `Foo`, whereas in the Swift code, the pointer to `NSObject` is always constant size because pointers are the same size everywhere on your computer.  
 
-As a corrolary, the Rust compiler must be able to figure out the size of `Foo` to declare `MyStruct`.  If `Foo` is a trait (which could be implemented by structs of various sizes) then we cannot work out the memory layout of `MyStruct` and thus it cannot be defined.
+As a corollary, the Rust compiler must be able to figure out the size of `Foo` to declare `MyStruct`.  If `Foo` is a trait (which could be implemented by structs of various sizes) then we cannot work out the memory layout of `MyStruct` and thus it cannot be defined.
 
 A more idiomatic translation is to tell Rust to use a pointer to `Foo`, which in Rust is an explicit thing:
 
@@ -320,7 +320,7 @@ struct MyStruct {
 };
 ```
 
-This behaves as you would expect, and as a corrolary `Foo` can now be a trait (although there are some interesting implications, see the section on Dispatch below).
+This behaves as you would expect, and as a corollary `Foo` can now be a trait (although there are some interesting implications, see the section on Dispatch below).
 
 One puzzle though is what it means to have
 
