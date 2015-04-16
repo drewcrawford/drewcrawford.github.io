@@ -827,6 +827,45 @@ On the plus side however, the function can assume nobody else has a reference to
 
 1.  If you want to ensure a function cannot be called twice (for example: `free` or `release`).  In Rust, this can be forced at compile time by using a moving function.
 2.  If you want to take something that is not entirely threadsafe and use it on a different thread.  Since you know there are no other references, you can move it onto a thread without worry that somebody else might accidentally use it.
+3.  You can also use this as a trick to ensure that the value "goes out of scope".
+
+For example if we have a
+
+```rust
+fn encrypt(&mut T) { }
+fn add_more_data(&mut T) { }
+
+let t = T;
+encrypt(&mut t);
+//many screenlengths
+//of code
+//later
+add_more_data(&mut t);
+```
+
+This code is "unsafe" in a way that the Rust compiler does not understand; it goes to show that "Rust safety" is not the same as *real* safety.  The trouble here is that we encrypted our `T`, but then later (perhaps much later, perhaps many versions of the program later) we added more data to it.  If we expected at the end of this program to have an encrypted `T` and instead we only have a "sorta" encrypted `T`, then that is bad news.  "sorta" encryption is the worst kind of encryption.
+
+This is because Rust does not understand what an "encrypt" function is, it's just a function same as `add_more_data` and you can all them in any order and Rust doesn't care.
+
+However we could tell Rust that `encrypt` is special and not just any old function by making it a *moving* function. This indicates that once we encrypt the `T`, nobody should touch it:
+
+```rust
+fn encrypt(T) { }
+fn add_more_data(&mut T) { }
+
+let t = T;
+encrypt(t); //move
+//many screenlengths
+//of code
+//later
+add_more_data(&mut t); //error
+```
+
+Now the nightmare of disclosing a huge security issue collapses into a compile error.  So that's progress.
+
+The insight here is that "Rust safety" is a term of art and does not mean your program does not have serious issues.  However very often you can make a small change (here, making `encrypt` a *moving function*) and suddenly Rust is auditing your programs much more thoroughly.  But you, the programmer, have to know how to make that happen.  It doesn't happen on its own.
+
+On the plus side, once we've clued Rust in about `encrypt`, it does all the tedious work of making sure that we don't add plaintext to our encrypted `T`, which is a very tedious and error-prone thing to audit by hand.  So in the right hands Rust really can run circles around the safety of other languages.
 
 Most of the time however the moving function is too restrictive.  Instead you probably want:
 
@@ -917,6 +956,41 @@ fn main() {
     f.moving();
 }
 ```
+
+## Don't copy that floppy
+
+You may be puzzled to find out that if `SomeType` is an array instead of a struct, the error caused by borrow and move goes away:
+
+```rust
+type SomeType = [u8; 10];
+
+fn moving(kinda_like_self: SomeType) {
+    println!("{:?}",kinda_like_self);
+}
+
+fn main() {
+    let f = [0; 10];
+    let g = &f; 
+    moving(f); //no error here
+}
+```
+
+At first it seems like the big change here is that we have a different kind of function than earlier because instead of saying `f.moving()` we say `moving(f)`.  This actually has little to do with it.  To say `f.moving()` we would have to insert the `moving` function inside the `Array` type, which you can do via Traits as we talked about earlier but that is just more syntax.
+
+What is actually happening here is that `SomeType` now implements the `Copy` trait.  Arrays derive (all of the?) traits their underlying elements have, and since `u8` has `Copy`, an array of `u8` has `Copy` as well.
+
+And traits that have `Copy` do not have move semantics.  They instead have "copy semantics" which is basically ordinary semantics if you're used to Swift.  It lifts this move restriction that we've been talking about.
+
+In the [API documentation](http://doc.rust-lang.org/std/marker/trait.Copy.html) they have a ridiculously circular and contradictory explanation of how you should use this feature, e.g., that all traits should be `Copy` except the ones that shouldn't, and only implement `Copy` when the thing should be copied.
+
+A much better explanation is this.  If your type has a pointer inside it (or a thing that has a thing that has a pointer) then it can't be copied and the compiler will stop you from implementing `Copy` on it.  This is because you'd end up with two strong references to that thing.
+
+Meanwhile you may find in some cases the additional discipline of move semantics is useful.  We've talked about some cases like with functions that "consume" `self` and/or their arguments, to make them deliberately unavailable later in the program as a way to avoid over-release and similar.
+
+Between those two cases, you have a lot of latitude about whether the type should use move semantics or copy semantics.  Personally, I tend to use move semantics until I hit a compile error, and then I make more of a firm decision.
+
+Another performance note.  `Copy` is poorly named, it simply means that the type *can* be copied, i.e., as necessary.  Creating a new reference does not actually incur a copy; the semantics here are copy-on-write.
+
 
 # Visibility
 
