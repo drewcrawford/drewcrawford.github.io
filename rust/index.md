@@ -845,7 +845,7 @@ add_more_data(&mut t);
 
 This code is "unsafe" in a way that the Rust compiler does not understand; it goes to show that "Rust safety" is not the same as *real* safety.  The trouble here is that we encrypted our `T`, but then later (perhaps much later, perhaps many versions of the program later) we added more data to it.  If we expected at the end of this program to have an encrypted `T` and instead we only have a "sorta" encrypted `T`, then that is bad news.  "sorta" encryption is the worst kind of encryption.
 
-This is because Rust does not understand what an "encrypt" function is, it's just a function same as `add_more_data` and you can all them in any order and Rust doesn't care.
+This is because Rust does not understand what an "encrypt" function is, it's just a function same as `add_more_data` and you can call them in any order and Rust doesn't care.
 
 However we could tell Rust that `encrypt` is special and not just any old function by making it a *moving* function. This indicates that once we encrypt the `T`, nobody should touch it:
 
@@ -959,7 +959,7 @@ fn main() {
 
 ## Don't copy that floppy
 
-You may be puzzled to find out that if `SomeType` is an array instead of a struct, the error caused by borrow and move goes away:
+You may be puzzled to find out that if `SomeType` is an array instead of a struct, the error caused by "borrow and move" goes away:
 
 ```rust
 type SomeType = [u8; 10];
