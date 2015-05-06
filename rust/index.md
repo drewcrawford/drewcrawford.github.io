@@ -15,6 +15,8 @@ Within those constraints you basically have C11, C++11, and Rust.  (Swift is not
 
 It's okay.  Really what most people want to know is "is it really safer?" and the answer is "yes, but the cost is high."  Using Rust has caught, perhaps, 10s of bugs that even very well-unit-tested C11 (or Swift) would not have caught.  The trouble is that I spend roughly 25% of my development time wrestling with the compiler to achieve that safety.  Is it worth it?  Maybe, for some programs.
 
+Some people tell me that "you get better with time" and such, and there is some truth to that, but I'm now 3 months in and the 25% number is still about right.  (It used to be, like 75%, so it did get better with time).  From the perspective of a daily Swift user, Rust is just fundamentally not as productive as Swift, although it does produce faster-running and safer programs.  More about this in the Design Philosophy section.
+
 To me, Rust is sort of a coincidence.  What I really want is a C++ that doesn't suck.  But you can produce a better C++ while drunk.  Rust has, IMHO, produced it.  But it is not better because it is safer, it is better because it's not mind-numbingly stupid.  Insofar as a lot of attention in the language design is focused on safety at the expense of everything else, I find it annoying.  But not as annoying as C++.
 
 # Methodology
@@ -253,6 +255,28 @@ Generally for this problem, one of several approaches are taken:
 4.  Comment on [this issue](https://github.com/rust-lang/rfcs/issues/1024)
 
 Overall traits are an interesting idea, and unify a lot of concepts that in Swift would be separate into a single tool.
+
+# A word on design philosophy
+
+The fact that `Circle`  isn't automatically `Shape` illustrates an important, but subtle difference in design philosophy.  In Rust, you tell the compiler what you are going to do and then you do it.  So in essence, the compiler is told twice: once in a high-level shorthand way, that acts as a "promise". And another time in a finely detailed, more roundabout way, that acts as a "fulfillment" of the earlier promise.  The idea is that the compiler checks your work, but doesn't lift a finger to help you.
+
+Meanwhile in Swift you tell the compiler something once and then it does it.  As a result Swift can be more concise, at the cost of losing some control about exactly how the promise will be fulfilled.
+
+In many ways it's like manual vs auto transmission in a car.  In an automatic transmission car you just tell the car what gear to use, but in a manual transmission you're involved in the mechanics of switching the gears.  At many times in Rust you are quite involved in the mechanics of various language features.  If you thought Swift was writing to-the-metal, I've got news for you, son.  Rust is to-the-particle.
+
+Examples of this philosophical debate on both large and small scales include:
+
+* Expecting callers to understand, research, and select some bolt-on wrapper to achieve reference semantics rather than a built-in `class` keyword
+* Move semantics and opt-in `clone` (strong pointers), instead of Swift's implicit strong pointers
+* Manual inheritance (as `Circle/Shape`) vs more traditional automatic inheritance
+* Verbosity of Rust's `impl` (as we will see in the next section)
+* Swift's automatic pointer classes vs Rust's more manual lifetimes (as we cover later on in this guide)
+* Structs with fields have a different syntax than structs without fields, and the caller is expected to know which kind of struct it's using
+* Swift has an emphasis on "automatic" properties (e.g. `private (set) var whatever` emits a getter and setter that meet certain constraints) while Rust never writes functions for you
+
+I'm tempted to say Rust is 'lower-level' than Swift, but that conjures up the chasm between say Python and C, and this is nowhere near that drastic.  It's fair to say however that the Swift developer will have the distinct sensation that they are repeating themselves a few extra times.  They're not wrong; that's what Rust asks of you.
+
+Another way to say this is that if there are two ways of doing something, Swift will try to pick a sensible default, while Rust will do neither and write you a long error message explaining how you can do it yourself.  In Rust's defense, I've found that doing things myself can produce much faster code, because I'm optimizing for some particular case instead of using a language-wide default implementation.  On the other hand, Swift's defaults tend to be sensible and they produce the program a lot faster.  But that is the tradeoff.
 
 # `impl` syntax
 
