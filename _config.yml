@@ -18,4 +18,4 @@ author:
 paginate:         5
 
 redcarpet:
-    extensions: [with_toc_data]
+    extensions: [with_toc_data, strikethrough]
