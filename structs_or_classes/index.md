@@ -325,7 +325,7 @@ If your answer is anything else, use a class.  But *especially* these:
 
 * Jeff, why the hell are you comparing two `NetworkController`s?  
 * Why the hell do you even *have* two `NetworkController`s?
-* What does it even *mean* to say that two HTTP responses are equal?  (Pause for existential reflection.)  That they have the same URL?  They have the same contents?  That one of them was once `.copy()`ed from another one?  I'm not sure that equality has a clear definition here.
+* What does it even *mean* to say that two HTTP responses are equal?  (Pause for existential reflection.)  That they have the same URL?  They have the same contents?  That one of them was once `.copy()`ed from another one (e.g., they have the same *provenance*)?  I'm not sure that equality has a clear definition here.
 * Are you trying to do this for `Foo` itself, or for everything `Foo` contains all 10 levels down?
 * Let me get back to you after studying the class hierarchy.
 
