@@ -461,6 +461,8 @@ Unlike C, it is safe, because back at the callsite somebody checks to see if the
 
 # Closures
 
+*Update: one of the Rust maintainers wrote a good guide to closures "under the hood" [here](http://huonw.github.io/blog/2015/05/finding-closure-in-rust/)*
+
 The Swift and Rust conception of a closure is similar, but subtly different.
 
 Let's take a Swift example. Somewhat surprisingly, this is a legal Swift program.
