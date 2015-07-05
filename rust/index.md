@@ -186,7 +186,7 @@ impl MyProtocol for Struct {
 
 This separation between the main body code and the trait code is similar to `extension` in Swift.  It can be in different files, etc.
 
-Also like `extension`, you can provide a trait impelementation for a system class.
+Also like `extension`, you can provide a trait implementation for a system class.
 
 ```rust
 impl<T> MyProtocol for Box<T> {
@@ -200,7 +200,7 @@ Unlike `extension` however (and possibly a better idea), you have to opt-in to a
 
 ```rust
 fn main() {
-    use MyProtocol; //opt-in to MyProtocol on all objects that have an impelementation
+    use MyProtocol; //opt-in to MyProtocol on all objects that have an implementation
     Box::new(5).my_func();
 }
 ```
