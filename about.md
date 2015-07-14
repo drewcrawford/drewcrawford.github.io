@@ -7,3 +7,4 @@ I used to blog about trivial stuff on [sealedabstract](http://sealedabstract.com
 
 This place is my low-effort, low-quality place to document things that need to be documented somewhere.
 
+Want me to build your app / consult for your company / speak at your event?  Good news!  I made a [whole website](http://drewcrawfordapps.com) just for you.
