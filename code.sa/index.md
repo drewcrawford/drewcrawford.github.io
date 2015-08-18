@@ -10,3 +10,4 @@ I am pretty laid back about merging random PRs and that sort of thing.  Make sur
 Here are some public projects I self-host:
 
 * [NaOH](https://code.sealedabstract.com/drewcrawford/NaOH): opinionated Swift bindings for libsodium
+* [CLIKit](https://code.sealedabstract.com/drewcrawford/CLIKit): an advanced, intuitive command-line parsing library for Swift programs.
