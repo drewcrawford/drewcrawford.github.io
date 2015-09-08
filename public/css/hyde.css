@@ -67,6 +67,7 @@ html {
     bottom: 0;
     width: 18rem;
     text-align: left;
+    overflow: scroll;
   }
 }
 
@@ -105,14 +106,14 @@ a.sidebar-nav-item:focus {
  * contents to the bottom of the sidebar in tablets and up.
  */
 
-@media (min-width: 48rem) {
+/*@media (min-width: 48rem) {
   .sidebar-sticky {
     position: absolute;
     right:  1rem;
     bottom: 1rem;
     left:   1rem;
   }
-}
+}*/
 
 
 /* Container
