@@ -13,3 +13,5 @@ Here are some public projects I self-host:
 * [CLIKit](https://code.sealedabstract.com/drewcrawford/CLIKit): an advanced, intuitive command-line parsing library for Swift programs.
 * [FISA](https://code.sealedabstract.com/drewcrawford/FISA): a multi-user secure wallet for secrets, passwords, tokens, and more, allowing you to share secrets among team members, access them from unit tests, and check them into source control.  
 * [CaveJohnson](https://code.sealedabstract.com/drewcrawford/CaveJohnson2): a powerful and elegant build system to teach Xcode Server new tricks. It's a set of commands that perform various commonly-used tasks in an iOS/Mac continuous integration system. 
+* [SynchronousRequestKit](https://code.sealedabstract.com/drewcrawford/SynchronousRequestKit): A synchronous REST library
+* [DCADispatchAdditions](https://code.sealedabstract.com/drewcrawford/DCADispatchAdditions): additions for libdispatch
