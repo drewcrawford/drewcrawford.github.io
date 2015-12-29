@@ -15,3 +15,4 @@ Here are some public projects I self-host:
 * [CaveJohnson](https://code.sealedabstract.com/drewcrawford/CaveJohnson2): a powerful and elegant build system to teach Xcode Server new tricks. It's a set of commands that perform various commonly-used tasks in an iOS/Mac continuous integration system. 
 * [SynchronousRequestKit](https://code.sealedabstract.com/drewcrawford/SynchronousRequestKit): A synchronous REST library
 * [DCADispatchAdditions](https://code.sealedabstract.com/drewcrawford/DCADispatchAdditions): additions for libdispatch
+* [swift-linux](https://code.sealedabstract.com/drewcrawford/swift-linux): Minimal docker images for Swift
