@@ -10,6 +10,8 @@ Here we
 1.  Mirror to GitLab
 2.  Send status updates back
 
+This should be fun.
+
 1.  First, create a system user: gitmirror
 2.  Second, create a gitlab user: gitmirror
 3.  Install [github2gitlab](https://pypi.python.org/pypi/github2gitlab) from pip
@@ -147,7 +149,7 @@ Here we
     PAYLOAD="{\"state\":\"${GITHUB_STATE}\",\"target_url\":\"${BUILD_URL}\",\"context\":\"$NAME\"}"
     curl -d "$PAYLOAD" -u glados:YOURTOKENHERE https://api.github.com/repos/${GITHUB_PROJECT}/statuses/${SHA}
     ```
-    
+
 11.  This assumes [glados](https://github.com/glados) is your GitHub user.
 12.  Finally, we config the webhooks themselves:
     ![hook1](hook1.png)
