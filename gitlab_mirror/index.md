@@ -117,6 +117,7 @@ Here we
 9.  (Remember to let 9000 through your firewall)
 10.  You *may* need to change /home/gitmirror/{repo}'s remote to use an SSH url to avoid an authentication prompt.  Try it and see.
 10.  Now we need that second script, `status-project.sh`:
+
     ```bash
     #!/bin/bash
     set -e
@@ -146,6 +147,7 @@ Here we
     PAYLOAD="{\"state\":\"${GITHUB_STATE}\",\"target_url\":\"${BUILD_URL}\",\"context\":\"$NAME\"}"
     curl -d "$PAYLOAD" -u glados:YOURTOKENHERE https://api.github.com/repos/${GITHUB_PROJECT}/statuses/${SHA}
     ```
+    
 11.  This assumes [glados](https://github.com/glados) is your GitHub user.
 12.  Finally, we config the webhooks themselves:
     ![hook1](hook1.png)
