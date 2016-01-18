@@ -16,3 +16,4 @@ Here are some public projects I self-host:
 * [SynchronousRequestKit](https://code.sealedabstract.com/drewcrawford/SynchronousRequestKit): A synchronous REST library
 * [DCADispatchAdditions](https://code.sealedabstract.com/drewcrawford/DCADispatchAdditions): additions for libdispatch
 * [swift-linux](https://code.sealedabstract.com/drewcrawford/swift-linux): Minimal docker images for Swift
+* Official mirrors and CI for the [Anarchy Tools](https://github.com/AnarchyTools) family of projects; an alternate Swift buildchain.
