@@ -71,7 +71,7 @@ You can also get fancy and use several markers to implement things out-of-order 
 
 You'll also notice that above-the-marker I tend to document *decisions* and *rationales*, while below-the-marker I document *questions* or *things where a decision is required*.  Again, that will be refactored into recording decisions and rationales when I actually make them.
 
-Finally, you'll notice that I have a *[punchlist](http://en.wikipedia.org/wiki/Punch_list)*.  This is a list of minor items that I broke while working on the feature proper.  For example, I may have turned on debug priting, or disabled some tests.  By recording that stuff here I ensure that I don't commit them that way.
+Finally, you'll notice that I have a *[punchlist](http://en.wikipedia.org/wiki/Punch_list)*.  This is a list of minor items that I broke while working on the feature proper.  For example, I may have turned on debug printing, or disabled some tests.  By recording that stuff here I ensure that I don't commit them that way.
 
 # Commit messages
 
