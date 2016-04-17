@@ -17,3 +17,4 @@ Here are some public projects I self-host:
 * [DCADispatchAdditions](https://code.sealedabstract.com/drewcrawford/DCADispatchAdditions): additions for libdispatch
 * [swift-linux](https://code.sealedabstract.com/drewcrawford/swift-linux): Minimal docker images for Swift
 * Official mirrors and CI for the [Anarchy Tools](https://github.com/AnarchyTools) family of projects; an alternate Swift buildchain.
+* [CaffeinatedSwift](https://code.sealedabstract.com/CaffeinatedSwift/swift), my own Swift distribution
