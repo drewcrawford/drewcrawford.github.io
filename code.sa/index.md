@@ -9,6 +9,7 @@ I am pretty laid back about merging random PRs and that sort of thing.  Make sur
 
 Here are some public projects I self-host:
 
+* [Caroline](https://code.sealedabstract.com/drewcrawford/Caroline): a pure-Swift testing framework
 * [NaOH](https://code.sealedabstract.com/drewcrawford/NaOH): opinionated Swift bindings for libsodium
 * [CLIKit](https://code.sealedabstract.com/drewcrawford/CLIKit): an advanced, intuitive command-line parsing library for Swift programs.
 * [FISA](https://code.sealedabstract.com/drewcrawford/FISA): a multi-user secure wallet for secrets, passwords, tokens, and more, allowing you to share secrets among team members, access them from unit tests, and check them into source control.  
