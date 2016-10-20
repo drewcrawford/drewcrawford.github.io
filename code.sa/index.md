@@ -7,4 +7,4 @@ I'm a big believer in self-hosting, and I self-host many open source projects I 
 
 I am pretty laid back about merging random PRs and that sort of thing.  Make sure to read the notes in CONTRIBUTING, if there are any.
 
-To see all the projects I self-host, visit https://code.sealedabstract.com
+To see all the projects I self-host, visit [code.sa](https://code.sealedabstract.com)
