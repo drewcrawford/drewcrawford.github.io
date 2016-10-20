@@ -7,16 +7,4 @@ I'm a big believer in self-hosting, and I self-host many open source projects I 
 
 I am pretty laid back about merging random PRs and that sort of thing.  Make sure to read the notes in CONTRIBUTING, if there are any.
 
-Here are some public projects I self-host:
-
-* [StandBack](https://code.sealedabstract.com/drewcrawford/StandBack): a regular expression library
-* [Caroline](https://code.sealedabstract.com/drewcrawford/Caroline): a pure-Swift testing framework
-* [NaOH](https://code.sealedabstract.com/drewcrawford/NaOH): opinionated Swift bindings for libsodium
-* [CLIKit](https://code.sealedabstract.com/drewcrawford/CLIKit): an advanced, intuitive command-line parsing library for Swift programs.
-* [FISA](https://code.sealedabstract.com/drewcrawford/FISA): a multi-user secure wallet for secrets, passwords, tokens, and more, allowing you to share secrets among team members, access them from unit tests, and check them into source control.  
-* [CaveJohnson](https://code.sealedabstract.com/drewcrawford/CaveJohnson2): a powerful and elegant build system to teach Xcode Server new tricks. It's a set of commands that perform various commonly-used tasks in an iOS/Mac continuous integration system. 
-* [SynchronousRequestKit](https://code.sealedabstract.com/drewcrawford/SynchronousRequestKit): A synchronous REST library
-* [DCADispatchAdditions](https://code.sealedabstract.com/drewcrawford/DCADispatchAdditions): additions for libdispatch
-* [swift-linux](https://code.sealedabstract.com/drewcrawford/swift-linux): Minimal docker images for Swift
-* Official mirrors and CI for the [Anarchy Tools](https://github.com/AnarchyTools) family of projects; an alternate Swift buildchain.
-* [CaffeinatedSwift](https://code.sealedabstract.com/CaffeinatedSwift/swift), my own Swift distribution
+To see all the projects I self-host, visit https://code.sealedabstract.com
