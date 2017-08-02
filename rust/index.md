@@ -262,7 +262,7 @@ The fact that `Circle`  isn't automatically `Shape` illustrates an important, bu
 
 Meanwhile in Swift you tell the compiler something once and then it does it.  As a result Swift can be more concise, at the cost of losing some control about exactly how the promise will be fulfilled.
 
-In many ways it's like manual vs auto transmission in a car.  In an automatic transmission car you just tell the car what gear to use, but in a manual transmission you're involved in the mechanics of switching the gears.  At many times in Rust you are quite involved in the mechanics of various language features.  If you thought Swift was writing to-the-metal, I've got news for you, son.  Rust is to-the-particle.
+In many ways it's like manual vs auto transmission in a car.  In an automatic transmission car you just tell the car to speed up or slow down, but in a manual transmission you're also involved in choosing the most appropriate gear and switching to it.  At many times in Rust you are quite involved in the mechanics of various language features.  If you thought Swift was writing to-the-metal, I've got news for you, son.  Rust is to-the-particle.
 
 Examples of this philosophical debate on both large and small scales include:
 
