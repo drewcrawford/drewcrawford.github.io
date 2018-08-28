@@ -47,30 +47,202 @@ Instead I'm going to cover the "hard stuff".  The stuff that I spent hours bangi
 
 Let's start with the type system.
 
-# Value Types
+## Structs
 
-In Swift, we have value types (Structs/Enums) and reference types (Classes).  They are "on the same level" in the sense that, they are both fundamental types.
+Rust's structs are very similar to Swift structs.  The differences are, as best as I can tell:
 
-In Rust, value types are fundamental, and reference types are secondary.  They are not on the same level.  There is not even any "class" in Rust.  If you want a reference type, you must derive it from some underlying value type.  We'll see how to do this once we cover the value types.
+1.  The `struct` itself contains only the *fields*.  The functions are contained in a separate block called `impl StructName`.  This is a lot like ObjC's `@interface` and `@implementation` separation, but unlike ObjC they are generally contained in the same file.
+2.  Right before the struct declaration you can include a set of lines like `#[derive(Clone)]`.  The presence of this line magically writes an implementation for the `Clone` trait.  More info on this later.
+
+```rust
+#[derive(Clone)]
+struct Foo {
+    bar: bool,
+}
+
+impl Foo {
+    fn new() -> Self {
+        // ...
+    }
+}
+```
 
 ## Enums
 
 Enums are practically the same in both languages.  One difference is that Rust uses `match` where Swift uses `switch`.  And the syntax is a little different, and Rust can do a little more.  But that's nothing to write home about.
 
-## Structs
+```rust
+enum FooBar {
+    Foo
+    Bar(String),
+    Baz { blee: bool },
+}
+```
 
-Rust's structs are also very similar to Swift structs.  The differences are, as best as I can tell:
+# Value Types
 
-1.  The `struct` itself contains only the *fields*.  The functions are contained in a separate block called `impl StructName`.  This is a lot like ObjC's `@interface` and `@implementation` separation, but unlike ObjC they are generally contained in the same file.
-2.  Right before the struct declaration you can include a set of lines like `#[derive(Clone)]`.  The presence of this line magically writes an implementation for the `Clone` trait.  More info on this later.
+In Swift whether a value has value or reference semantics is baked into its type: `struct`/`enum` enforce values semantics, while `class` enforce reference semantics.
+While Rust has no concept of a `class` (more specifically: Rust has no concept of classical inheritance, that is commonly associated with `class`) it sure does have references.
+
+Another unique aspect of Rust is its use of [affine value types](https://en.wikipedia.org/wiki/Substructural_type_system#Affine_type_systems). As such a value must not ever be used more than once:
+
+```rust
+// <- add `struct Foo` from earlier here
+
+fn main() {
+    let foo = Foo::new();
+    let bar = foo; // `bar` now holds the moved value of `foo`
+    let baz = foo; // `foo` was moved and is inaccessible at this point
+}
+```
+
+The code above produces the following compiler error:
+
+```plain
+error[E0382]: use of moved value: `foo`
+   |
+14 |     let bar = foo;
+   |         --- value moved here
+15 |     let baz = foo;
+   |         ^^^ value used here after move
+   |
+   = note: move occurs because `foo` has type `Foo`, which does not implement the `Copy` trait
+```
+
+To make the above code compile one has to explicitly clone the value of `foo`:
+
+```rust
+// <- add `struct Foo` from earlier here
+
+fn main() {
+    let foo = Foo::new();
+    let bar = foo.clone(); // `bar` now holds a copy of `foo`
+    let baz = foo; // `baz` now holds the moved value of `foo`
+}
+```
+
+The error message above mentions a `Copy` trait. `Copy` enables implicit cloning, but is limited to types that can be trivially byte-wise cloned, such as Rust's primitive types (`u32`, `bool`, `f32`, etc.).
+
+As a result of integers implementing `Copy` in Rust the following code is valid:
+
+```rust
+fn main() {
+    let foo = 42;
+    let bar = foo; // `bar` now holds an implicit copy of `foo`
+    let baz = foo; // `baz` now holds an implicit copy of `foo`
+}
+```
+
+## Mutability
+
+Just like Rust chooses to disconnect the choice of value vs. reference semantics from an individual type's declaration it chooses to remove the notion of mutability from the type's declaration.
+
+Just like Swift distinguishes between immutable and mutable values at the point of value declaration via `let` and `var`, Rust does with `let` and `let mut`.
+
+```rust
+fn main() {
+    let foo = 42;
+    foo = 123;
+}
+```
+
+The code above produces the following compiler error:
+
+```plain
+error[E0384]: cannot assign twice to immutable variable `foo`
+  |
+2 |     let foo = 42;
+  |         --- first assignment to `foo`
+3 |     foo = 123;
+  |     ^^^^^^^^^^^^^ cannot assign twice to immutable variable
+```
+
+To make the above code compile one has to explicitly mark the value of `foo` as mutable:
+
+```rust
+fn main() {
+    let mut foo = 42;
+    foo = 123; // the value of `foo` is now `123`
+}
+```
 
 # Reference Types
 
-In Swift a reference type is declared with `class`.  Rust does not really have a notion of this.  Instead, there are three "reference wrappers" that turn a value type into a reference type.  These "wrappers" are part of the standard library, not part of the language itself.
+Swift conflates the concept of inheritance and the concept of reference semantics by pushing one to have both or nothing (with the exception of `final class Foo {}`) and makes you choose at the time you declare the type.
 
-Note that in all cases, you get reference semantics *by wrapper*, so this is something that the *user* of the type does, not specified by the *type itself*.  Whereas in Swift `class` causes the *type itself* to be a reference.  In Rust, over here we can use something as a reference type with a wrapper, and somewhere else we can use it as a value type without a wrapper.  Value types are fundamental; reference types are glued on the top.
+Rust in contrast has no concept of inheritance in the classical sense (yet) and separates the notion of reference semantics from the actual type. You choose whether to give a value reference semantics at their point of use, through the use of "borrowing".
 
-You can, technically, declare a *type alias* that works out to e.g. `Box<T>` but this is not idiomatic.  People expect the caller to decide how to use the type, and for it not to be a property of the type itself.
+## Borrowing
+
+```rust
+fn main() {
+    let foo = 42;
+    let bar = &foo; // `bar` holds a reference to `foo`
+    let baz = &foo; // `baz` holds a reference to `foo`
+}
+```
+
+The type of `foo` in above code is `u32`, while the type of `bar` and `baz` is `&u32` in both cases. Generally speaking `&T` denotes a borrowing reference to a value of type `T` and is a type of itself.
+
+## Mutability
+
+At this point one might see similarities between Rust's borrows and Swift's `inout` function parameters. And rightly so. They bear a certain resemblance in both syntax and semantics. In fact Swift's `inout` parameters could be considered a very limited subset of Rust's borrowing concept, most notably its concept of mutable borrows: `&mut foo`.
+
+```rust
+fn main() {
+    let mut foo = 42;
+    let bar = &mut foo; // `bar` holds a mutable reference to `foo`
+    *bar = 123; // the value of `foo` is now `123`
+}
+```
+
+There is one big caveat to mutable borrows though: Mutable borrows of a value must be unique. I.e. once you mutably borrow `foo` (via `&mut foo`) you cannot have any other borrows of it (regardless of their mutability even).
+
+```rust
+fn main() {
+    let mut foo = 42;
+    let bar = &mut foo; // `bar` holds a mutable reference to `foo`
+    let baz = &mut foo; // `baz` holds a mutable reference to `foo`
+}
+```
+
+```plain
+error[E0499]: cannot borrow `foo` as mutable more than once at a time
+  |
+3 |     let bar = &mut foo;
+  |                    --- first mutable borrow occurs here
+4 |     let baz = &mut foo;
+  |                    ^^^ second mutable borrow occurs here
+5 | }
+  | - first borrow ends here
+```
+
+As mentioned above even a second immutable borrow is not allowed in Rust:
+
+```rust
+fn main() {
+    let mut foo = 42;
+    let bar = &foo; // `bar` holds an immutable reference to `foo`
+    let baz = &mut foo; // `baz` holds a mutable reference to `foo`
+}
+```
+
+```plain
+error[E0502]: cannot borrow `foo` as mutable because it is also borrowed as immutable
+  |
+3 |     let bar = &foo;
+  |                --- immutable borrow occurs here
+4 |     let baz = &mut foo;
+  |                    ^^^ mutable borrow occurs here
+5 | }
+  | - immutable borrow ends here
+```
+
+# Owning Reference Types
+
+Borrows, as the name suggests do not hand over ownership of the value at hand, nor share it among multiple owners.
+
+For this situations where owned or multiple mutable references of a value are absolutely necessary Rust provides a selection of wrapper types in its standard library.
 
 ## Box<T>
 
