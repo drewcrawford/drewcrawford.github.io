@@ -22,7 +22,7 @@ I am advised this works as intended.  For `restrict` anyway, the compiler keywor
 As of iOS 14, `assert` is defined as
 
 ```c
-\#define assert(condition) ((void) 0)
+#define assert(condition) ((void) 0)
 ```
 
 For this reason it has no effect.
@@ -30,7 +30,7 @@ For this reason it has no effect.
 If you want `assert`-like behavior in Metal, you can use
 
 ```c
-assert(X) if (__builtin_expect(!(X),0)) {float device *f = 0; *f = 0;}
+#define assert(X) if (__builtin_expect(!(X),0)) {float device *f = 0; *f = 0;}
 ```
 
 along with the "metal shader validation" diagnostic in [Debug GPU-side errors in Metal](https://developer.apple.com/wwdc20/10616).  It will not trip without this diagnostic.
