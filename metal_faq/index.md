@@ -22,7 +22,7 @@ I am advised this works as intended.  For `restrict` anyway, the compiler keywor
 As of iOS 14, `assert` is defined as
 
 ```c
-#define assert(condition) ((void) 0)
+\#define assert(condition) ((void) 0)
 ```
 
 For this reason it has no effect.
