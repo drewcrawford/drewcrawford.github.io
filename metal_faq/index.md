@@ -45,4 +45,69 @@ This is usually caused by performing a metal capture programmatically during app
 
 *FB7741457*
 
+## cross-compiling C code to metal
+
+The best way I know of to do this is to concatenate `.c` files into a `.metal` file, and compile that.
+
+1.  Create a 'run script' phase
+2.  ```sh
+	COUNTER=0
+	rm -f "${SCRIPT_OUTPUT_FILE_0}"
+	while [ $COUNTER -lt ${SCRIPT_INPUT_FILE_COUNT} ]; do
+	    tmp="SCRIPT_INPUT_FILE_$COUNTER"
+	    FILE=${!tmp}
+	    cat "$FILE" >> "${SCRIPT_OUTPUT_FILE_0}"
+	    let COUNTER=COUNTER+1
+	done
+	``` 
+3.  Set the input files to all your `.c` input files.  You need to keep them up to date, alterantively you can use a file list
+4.  Set the output files to your `.metal` file.  After this file is built, drag into xcode and attach it to the right project
+
+See [blitcurveMetal.xcodeproj](https://github.com/drewcrawford/blitcurve/tree/master/blitcurveMetal.xcodeproj) for an example.
+
+
+## distributing a library for use inside a metal shader
+
+The best way I know of to do this is to build a `.a` file, or a script to build one, and distribute that.
+
+1.  Create a "run script" phase
+2.  ```sh
+	metal-libtool -static ${TARGET_TEMP_DIR}/Metal/mylib.air  -o ${BUILT_PRODUCTS_DIR}/libmylib.a
+```
+3.  Set the "input files" to `${TARGET_TEMP_DIR}/Metal/mylib.air`
+4.  Set the "output files" to `${BUILT_PRODUCTS_DIR}/libmylib.a`
+
+### If you are also doing this as part of a Swift package,
+
+...nobody can use your xcodeproj directly, because the xcodeproj is readonly and you will get errors about "The file "project.pbxproj" could not be unlocked" (FB8095945)
+
+Instead, you need to create a build script that calls xcodebuild:
+
+```sh
+#!/bin/sh
+# makemetal.sh
+if [ "$PLATFORM_NAME" = "macosx" ]; then
+INNER_TARGET="mylib-macOS"
+else
+INNER_TARGET="mylib-iOS"
+fi
+if [ "$PLATFORM_NAME" = "iphonesimulator" ]; then
+SDK_ARGS="-sdk iphonesimulator"
+else
+SDK_ARKS = ""
+fi
+# we want to use BUILT_PRODUCTS_DIR directly.  This avoids a lot of tricky problems
+# about how to predict where the output will be on a per-target per-architecture basis
+xcodebuild build -project ${MYLIB_DIR}/blitcurveMetal.xcodeproj -configuration ${CONFIGURATION} -target "$INNER_TARGET" ${SDK_ARGS} BUILT_PRODUCTS_DIR=${BUILT_PRODUCTS_DIR}
+```
+
+Then, instruct users to
+1.  Set `MYLIB_DIR` to the path to the script as a custom build setting.  For scripts in the root of a Swift packages managed in git by xcode, the value of this is typically `${BUILD_ROOT}/../../SourcePackages/Checkouts/packagename`
+2.  Set the `MTLLINKER_FLAGS` to `-L {BUILT_PRODUCTS_DIR} -l mylib`.  This assumes that your library has the `libmylib.a` naming scheme.  Also, this build setting is undocumented.
+3.  Set the "Metal Compiler - BuildOptions" `MTL_HEADER_SEARCH_PATHS` to include `${HEADER_SEARCH_PATHS}`.  This will let Metal sources find the header files from the Swift package.
+
+See [blitcurve](https://github.com/drewcrawford/blitcurve) for a complete example.
+
+* *FB7776777*
+* *FB7744335*
 
