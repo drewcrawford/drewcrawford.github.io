@@ -98,7 +98,7 @@ SDK_ARKS = ""
 fi
 # we want to use BUILT_PRODUCTS_DIR directly.  This avoids a lot of tricky problems
 # about how to predict where the output will be on a per-target per-architecture basis
-xcodebuild build -project ${MYLIB_DIR}/blitcurveMetal.xcodeproj -configuration ${CONFIGURATION} -target "$INNER_TARGET" ${SDK_ARGS} BUILT_PRODUCTS_DIR=${BUILT_PRODUCTS_DIR}
+xcodebuild build -project ${MYLIB_DIR}/project.xcodeproj -configuration ${CONFIGURATION} -target "$INNER_TARGET" ${SDK_ARGS} BUILT_PRODUCTS_DIR=${BUILT_PRODUCTS_DIR}
 ```
 
 Then, instruct users to
