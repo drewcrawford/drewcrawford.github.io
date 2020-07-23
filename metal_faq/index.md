@@ -102,7 +102,7 @@ xcodebuild build -project ${MYLIB_DIR}/project.xcodeproj -configuration ${CONFIG
 ```
 
 Then, instruct users to
-1.  Set `MYLIB_DIR` to the path to the script as a custom build setting.  For scripts in the root of a Swift packages managed in git by xcode, the value of this is typically `${BUILD_ROOT}/../../SourcePackages/Checkouts/packagename`
+1.  Set `MYLIB_DIR` to the path to the script as a custom build setting.  For scripts in the root of a Swift package managed in git by xcode, the value of this is typically `${BUILD_ROOT}/../../SourcePackages/Checkouts/packagename`
 2.  Set the `MTLLINKER_FLAGS` to `-L {BUILT_PRODUCTS_DIR} -l mylib`.  This assumes that your library has the `libmylib.a` naming scheme.  Also, this build setting is undocumented.
 3.  Set the "Metal Compiler - BuildOptions" `MTL_HEADER_SEARCH_PATHS` to include `${HEADER_SEARCH_PATHS}`.  This will let Metal sources find the header files from the Swift package.
 
