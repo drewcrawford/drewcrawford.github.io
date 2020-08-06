@@ -111,3 +111,40 @@ See [blitcurve](https://github.com/drewcrawford/blitcurve) for a complete exampl
 * *FB7776777*
 * *FB7744335*
 
+# My "Metal Library" target does not have a product
+
+The best solution I'm aware of on this problem is to create a custom phase for copying the `.metallib` into the target manually.
+
+```bash
+COUNTER=0
+while [ $COUNTER -lt ${SCRIPT_INPUT_FILE_COUNT} ]; do
+    tmp="SCRIPT_INPUT_FILE_$COUNTER"
+    INPUT=${!tmp}
+    
+    tmp="SCRIPT_OUTPUT_FILE_$COUNTER"
+    OUTPUT=${!tmp}
+
+    cp ${INPUT} ${OUTPUT}
+
+    let COUNTER=COUNTER+1
+done
+
+```
+
+* input files: `${BUILT_PRODUCTS_DIR}/my.metallib`
+* output files: `${BUILT_PRODUCTS_DIR}/${EXECUTABLE_FOLDER_PATH}/my.metallib`
+
+*FB8276893*
+
+# MTLCaptureError Code=1
+
+`Error Domain=MTLCaptureError Code=1 "Capturing is not supported.`
+
+Add `MetalCaptureEnabled=1` to Info.plist.
+
+Apple [documents](https://developer.apple.com/documentation/metal/frame_capture_debugging_tools/enabling_frame_capture?language=objc) that this happens automatically, but I'm aware of some cases where it doesn't.
+
+*FB7870713 – works as designed*
+
+
+
