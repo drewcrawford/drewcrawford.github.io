@@ -102,7 +102,7 @@ xcodebuild build -project ${MYLIB_DIR}/project.xcodeproj -configuration ${CONFIG
 ```
 
 Then, instruct users to
-1.  Set `MYLIB_DIR` to the path to the script as a custom build setting.  For scripts in the root of a Swift package managed in git by xcode, the value of this is typically `${BUILD_ROOT}/../../SourcePackages/Checkouts/packagename`
+1.  Set `MYLIB_DIR` to the path to the script as a custom build setting.  For scripts in the root of a Swift package managed in git by xcode, the value of this is typically `${SHARED_PRECOMPS_DIR}/../../../SourcePackages/Checkouts/packagename`
 2.  Set the `MTLLINKER_FLAGS` to `-L ${BUILT_PRODUCTS_DIR} -l mylib`.  This assumes that your library has the `libmylib.a` naming scheme.  Also, this build setting is undocumented.
 3.  Set the "Metal Compiler - BuildOptions" `MTL_HEADER_SEARCH_PATHS` to include `${HEADER_SEARCH_PATHS}`.  This will let Metal sources find the header files from the Swift package.
 
@@ -110,6 +110,34 @@ See [blitcurve](https://github.com/drewcrawford/blitcurve) for a complete exampl
 
 * *FB7776777*
 * *FB7744335*
+
+### `SHARED_PRECOMPS_DIR`?  wtf?
+
+Yeah, so it turns out there is no good environment variable to get a path to the swift package is on disk.  
+
+In general, a project's dependencies can be specified by a local path, a git url, or a mix of both strategies.  So to start with there's not a single location where you can expect your Swift package dependencies.
+
+The git urls are resolved by Xcode to path like `~/Library/Developer/DerivedData/YourProject-stuffhere/SourcePackages/Checkouts/packagename`, so you can theoretically get a fixed path for that case specifically.  However,
+
+* This is undocumented and could change
+* There is no environment variable that gets the `Checkouts`, `SourcePackages` or even `YourProject-stuffhere` paths.
+* There *are* environment variables that return an arbitrary folder inside the `YourProject-stuffhere` path.  These include plausible candidates like `BUILD_DIR` and `BUILD_ROOT`.  So in theory, you concatenate `BUILD_DIR`, some `../../` updiring and then the undocumented `SourcePackages/Checkouts/packagename` at the end.
+
+However, in various situations Xcode will increase the directory depth of these variables.  For example, when building your scheme as part of running a playground, `BUILD_DIR` is 
+
+`~/Library/Developer/DerivedData/YourProject-stuffhere/Build/Intermediates.noindex/Playgrounds/Products`
+
+but when built on its own, it's
+
+`~/Library/Developer/DerivedData/YourProject-stuffhere/Build/Products`
+
+`SHARED_PRECOMPS_DIR` is pretty much the only value I'm aware of that seems to have a fixed number of subdirectories and is suitable for this purpose.
+
+I'm sorry.
+
+* `FB8102669` - environment variable for swift packages
+* `FB8095382` - environment variable for metal projects
+
 
 # My "Metal Library" target does not have a product
 
