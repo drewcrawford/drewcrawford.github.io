@@ -68,11 +68,11 @@ See [blitcurveMetal.xcodeproj](https://github.com/drewcrawford/blitcurve/tree/ma
 
 ## distributing a library for use inside a metal shader
 
-The best way I know of to do this is to build a `.a` file, or a script to build one, and distribute that.
+The best way I know of to do this is to build a `.a` file, or a script/xcodeproj to build one, and distribute that.
 
 1.  Create a "run script" phase
 2.  ```sh
-	metal-libtool -static ${TARGET_TEMP_DIR}/Metal/mylib.air  -o ${BUILT_PRODUCTS_DIR}/libmylib.a
+	metal-libtool -static "${TARGET_TEMP_DIR}/Metal/mylib.air"  -o "${BUILT_PRODUCTS_DIR}/libmylib.a"
 ```
 3.  Set the "input files" to `${TARGET_TEMP_DIR}/Metal/mylib.air`
 4.  Set the "output files" to `${BUILT_PRODUCTS_DIR}/libmylib.a`
@@ -81,63 +81,27 @@ The best way I know of to do this is to build a `.a` file, or a script to build 
 
 ...nobody can use your xcodeproj directly, because the xcodeproj is readonly and you will get errors about "The file "project.pbxproj" could not be unlocked" (FB8095945)
 
-Instead, you need to create a build script that calls xcodebuild:
+Unfortunately, you have to instruct users to
 
-```sh
-#!/bin/sh
-# makemetal.sh
-if [ "$PLATFORM_NAME" = "macosx" ]; then
-INNER_TARGET="mylib-macOS"
-else
-INNER_TARGET="mylib-iOS"
-fi
-if [ "$PLATFORM_NAME" = "iphonesimulator" ]; then
-SDK_ARGS="-sdk iphonesimulator"
-else
-SDK_ARKS = ""
-fi
-# we want to use BUILT_PRODUCTS_DIR directly.  This avoids a lot of tricky problems
-# about how to predict where the output will be on a per-target per-architecture basis
-xcodebuild build -project ${MYLIB_DIR}/project.xcodeproj -configuration ${CONFIGURATION} -target "$INNER_TARGET" ${SDK_ARGS} BUILT_PRODUCTS_DIR=${BUILT_PRODUCTS_DIR}
-```
-
-Then, instruct users to
-1.  Set `MYLIB_DIR` to the path to the script as a custom build setting.  For scripts in the root of a Swift package managed in git by xcode, the value of this is typically `${SHARED_PRECOMPS_DIR}/../../../SourcePackages/Checkouts/packagename`
+1.  Install your project in a fixed location relative to their project, such as with a git submodule or copying the library into their repository.
+3.  Set the "Metal Compiler - BuildOptions" "Header Search Paths" to include fixedlocation/Sources/target/include.  This will let Metal sources find the header files from the Swift package.  *Note this is distinct from "Header Search Paths" underneath "Search Paths" category.*
 2.  Set the `MTLLINKER_FLAGS` to `-L ${BUILT_PRODUCTS_DIR} -l mylib`.  This assumes that your library has the `libmylib.a` naming scheme.  Also, this build setting is undocumented.
-3.  Set the "Metal Compiler - BuildOptions" `MTL_HEADER_SEARCH_PATHS` to include `${HEADER_SEARCH_PATHS}`.  This will let Metal sources find the header files from the Swift package.
 
 See [blitcurve](https://github.com/drewcrawford/blitcurve) for a complete example.
 
 * *FB7776777*
 * *FB7744335*
+* *FB8095945*
 
-### `SHARED_PRECOMPS_DIR`?  wtf?
 
-Yeah, so it turns out there is no good environment variable to get a path to the swift package is on disk.  
+#### Why a fixed directory?
 
-In general, a project's dependencies can be specified by a local path, a git url, or a mix of both strategies.  So to start with there's not a single location where you can expect your Swift package dependencies.
+[Prevoius versions of this FAQ](https://github.com/drewcrawford/drewcrawford.github.io/blob/93765a25e3dafd29f7b75e8114d7b7e066a38c5b/metal_faq/index.md#shared_precomps_dir--wtf) did some reverse-engineering of how xcode resolves swiftpm packages in order to calculate where xcode keeps swiftpm projects in terms of various other environment variables.
 
-The git urls are resolved by Xcode to path like `~/Library/Developer/DerivedData/YourProject-stuffhere/SourcePackages/Checkouts/packagename`, so you can theoretically get a fixed path for that case specifically.  However,
-
-* This is undocumented and could change
-* There is no environment variable that gets the `Checkouts`, `SourcePackages` or even `YourProject-stuffhere` paths.
-* There *are* environment variables that return an arbitrary folder inside the `YourProject-stuffhere` path.  These include plausible candidates like `BUILD_DIR` and `BUILD_ROOT`.  So in theory, you concatenate `BUILD_DIR`, some `../../` updiring and then the undocumented `SourcePackages/Checkouts/packagename` at the end.
-
-However, in various situations Xcode will increase the directory depth of these variables.  For example, when building your scheme as part of running a playground, `BUILD_DIR` is 
-
-`~/Library/Developer/DerivedData/YourProject-stuffhere/Build/Intermediates.noindex/Playgrounds/Products`
-
-but when built on its own, it's
-
-`~/Library/Developer/DerivedData/YourProject-stuffhere/Build/Products`
-
-`SHARED_PRECOMPS_DIR` is pretty much the only value I'm aware of that seems to have a fixed number of subdirectories and is suitable for this purpose.
-
-I'm sorry.
+However, the environment variables can take on a wide range of values (such as when archiving, building as part of a playground, etc.) and I don't think there is one stable enough to use for this purpose.
 
 * `FB8102669` - environment variable for swift packages
 * `FB8095382` - environment variable for metal projects
-
 
 # My "Metal Library" target does not have a product
 
