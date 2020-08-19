@@ -1,9 +1,8 @@
 ---
 layout: page
 title: Github Actions
-render_with_liquid: false
 ---
-
+{% raw %}
 # Skipping 'rerun' scheduled builds
 
 Suppose you have some expensive CI workflow, long-running tests or the like.  It's too expensive to run on every commit, so you schedule it to run once a day instead:
@@ -144,3 +143,4 @@ Further reading on this topic:
 
 Not currently, at least not maintainably.  The "cache" action is very complex and cannot be trivially composed with other behavior.  See [#612](https://github.com/actions/runner/pull/612) for adding the "uses" flag to recursively compose actions.
 
+{% endraw %}
