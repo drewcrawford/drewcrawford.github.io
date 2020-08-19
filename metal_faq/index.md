@@ -61,10 +61,24 @@ The best way I know of to do this is to concatenate `.c` files into a `.metal` f
 	done
 	``` 
 3.  Set the input files to all your `.c` input files.  You need to keep them up to date, alterantively you can use a file list
-4.  Set the output files to your `.metal` file.  After this file is built, drag into xcode and attach it to the right project
+4.  Set the output files to your `${DERIVED_SOURCES_DIR}/your.metal` file.
+5.  Now create a compile step.  I reverse-engineered this by creating a dummy xcode project and seeing what it emitted.
+    ```sh
+		if [ $MTL_ENABLE_DEBUG_INFO = "INCLUDE_SOURCE" ]; then
+		MOREARGS="-gline-tables-only -MO"
+		else
+		MOREARGS=""
+		fi
+
+		metal -c -target air64-apple-ios14.0 $MOREARGS -MO -I${MTL_HEADER_SEARCH_PATHS} -F${HEADER_SEARCH_PATHS} -isysroot "${SDKROOT}" -ffast-math  -o "${TARGET_TEMP_DIR}/Metal/your.air"  -MMD  "${DERIVED_SOURCES_DIR}/your.metal"
+    ```
+    You may have to massage this a bit for your situation.  For example, on macOS I use `-target air64-apple-macos10.15`.
 
 See [blitcurveMetal.xcodeproj](https://github.com/drewcrawford/blitcurve/tree/master/blitcurveMetal.xcodeproj) for an example.
 
+You may be wondering, why the `${DERIVED_SOURCES_DIR}`?  It's because in environments where the sourcetree isn't preserved, like CI, relying on its preservation may break incremental builds.
+
+You may also be wondering, can't we leverage the Xcode build system a bit more?  The short answer is [no](http://www.openradar.me/10488973).
 
 ## distributing a library for use inside a metal shader
 

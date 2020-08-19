@@ -61,3 +61,26 @@ jobs:
 ```
 
 The macOS job will not begin until the linux job confirms a cache miss.  Since linux is 10x cheaper than macOS, this is a significant savings.
+
+# Incremental builds
+
+## xcode
+
+There are several tricks to incremental builds with xcodebuild:
+
+1.  Backup/restore DerivedData with a [actions/cache](https://github.com/actions/cache) action.
+2.  Manually tar/untar
+    1.  tar with `cfPp [tarfile] --format posix`.  This preserves various attributes used by xcodebuild
+    2.  untar with `xvp`.  This preserves various attributes used by xcodebuild
+3.  Set mtime on all sourcefiles to a consistent value
+4.  Include `-IgnoreFileSystemDeviceInodeChanges=YES` on the xcodebuild CLI
+
+A complete example:
+
+
+
+
+# Can any of these be placed in a reusable GitHub action?
+
+Not currently, at least not maintainably.  The "cache" action is very complex and cannot be trivially composed with other behavior.  See [#612](https://github.com/actions/runner/pull/612) for adding the "uses" flag to recursively compose actions.
+
