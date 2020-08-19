@@ -77,6 +77,67 @@ There are several tricks to incremental builds with xcodebuild:
 
 A complete example:
 
+```yaml
+steps:
+  #first we want to check out our sourcecode; we will also use this as a staging area for caches.
+  #note that if we do this too late, our sourcetree will overwrite staging data.
+- uses: actions/checkout@v2
+
+#This will get the date in a variety of components that we can concatenate manually.  Goal
+#is to find the most recent data, which will speed up our cache time.
+- name: Get Date
+  id: get-date
+  run: |
+    echo "::set-output name=minute::$(/bin/date -u "+%M")"
+    echo "::set-output name=week::$(/bin/date -u "+%U")"
+    echo "::set-output name=date::$(/bin/date -u "+%Y%m%d")"
+    echo "::set-output name=hour::$(/bin/date -u "+%H")"
+  shell: bash
+# Use the data collected above to build up cache keys into buckets in order of preference
+- uses: actions/cache@v2
+  with:
+    path: dd-tar-cache
+    key: metaltest-1-${{ steps.get-date.outputs.week }}-${{ steps.get-date.outputs.date }}-${{ steps.get-date.outputs.hour }}-${{ steps.get-date.outputs.minute }}
+    restore-keys: |
+      metaltest-1-${{ steps.get-date.outputs.week }}-${{ steps.get-date.outputs.date }}-${{ steps.get-date.outputs.hour }}
+      metaltest-1-${{ steps.get-date.outputs.week }}-${{ steps.get-date.outputs.date }}
+      metaltest-1-${{ steps.get-date.outputs.week }}
+      metaltest-1
+
+# Extract our derived data from a tar file, if available.  We need to tar in its own step
+# to preserve permissions, use posix notation for higher-resolution timestamps, etc
+- name: dd untar
+  run: if [ -f dd-tar-cache/dd.tar ]; then tar xvPpf dd-tar-cache/dd.tar; else echo "No cache file"; fi
+
+# Xcode uses the mtime as one of its signals for incremental builds.  When we check out a repository, the mtime
+# is initially the time we did the checkout, which means that each build will be 'new'.
+# The script below sets the mtime based on the time the file was modified in git.  It's not exact,
+# but it's at least *consistent*, which is what we need for incremental builds.
+- name: set mtime
+  run: |
+    set +e
+    git submodule foreach 'rev=HEAD; for f in $(git ls-tree -r -t --full-name --name-only "$rev") ; do     touch -t $(git log --pretty=format:%cd --date=format:%Y%m%d%H%M.%S -1 "$rev" -- "$f") "$f"; done'
+    rev=HEAD; for f in $(git ls-tree -r -t --full-name --name-only "$rev") ; do     touch -t $(git log --pretty=format:%cd --date=format:%Y%m%d%H%M.%S -1 "$rev" -- "$f") "$f"; done
+# Specify a particular version of xcode.  In this example, I'm using xcode 12 beta
+- name: xcode-select
+  run: sudo xcode-select -s /Applications/Xcode_12_beta.app
+
+# Important to this part, we use a custom `derivedDataPath` and we tell xcode to ignore inode changes.
+- name: test
+  run: xcodebuild -IgnoreFileSystemDeviceInodeChanges=YES -derivedDataPath localDerivedData -scheme "MyScheme" | xcpretty && exit ${PIPESTATUS[0]}
+# tar up the derived data in the appropriate format that we used for untarring above.
+- name: dd-tar
+  run: mkdir -p dd-tar-cache && tar cfPp dd-tar-cache/dd.tar --format posix localDerivedData
+```
+
+## swiftpm
+
+In spite of the fact that actions/cache [lists an example for this usage](https://github.com/actions/cache/blob/main/examples.md#swift---swift-package-manager), I don't believe it is currently possible.
+
+Further reading on this topic:
+* https://bugs.swift.org/browse/SR-11760
+* https://github.com/actions/cache/pull/159
+* https://github.com/apple/swift-llbuild/pull/641#
 
 
 
