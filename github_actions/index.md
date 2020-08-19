@@ -1,6 +1,7 @@
 ---
 layout: page
 title: Github Actions
+render_with_liquid: false
 ---
 
 # Skipping 'rerun' scheduled builds
@@ -21,7 +22,6 @@ Now you hack on this project all weekend, and then you stop committing for awhil
 Instead, you want some way to run the build each day, *only if there are new commits*.  There are various suggestions for how to do this based on [publishing artifacts](https://github.community/t/skip-github-action-workflow-if-it-has-been-executed-before-on-the-same-commit/16367/3), [parsing dates](https://stackoverflow.com/a/63023602/116834) and other approaches.  However, these seem rather overengineered/finicky to me.
 
 Instead, these 2 steps will cancel a workflow if there's a matching commit sha in the cache:
-
 ```yaml
 steps:
       - id: cache-sha
@@ -32,7 +32,6 @@ steps:
       - uses: andymckay/cancel-action@0.2
         if: ${{ steps.cache-sha.outputs.cache-hit == 'true' }}
 ```
-
 GitHub [does purge the cache eventually](https://github.com/actions/cache#cache-limits), so this may sometimes rerun.  However, it works pretty well for me.
 
 Another trick is to do this on a cheap platform like Linux, before spinning up jobs on an expensive platform like macOS:
