@@ -196,7 +196,7 @@ Usually caused by a GPU abort or IOAF that took place during the capture.
 
 Variant error has "NSCocoaErrorDomain:260" in the subhead.
 
-This seems to be caused by some problem locating sourcecode or debugging info.  This can occur if you are linking in a static library made with `metal-libtool`.  Interestingly, this can occur even if the symbols in the library are not referenced by the shader being debugged.  Maybe referenced by a different shader in the capture, or just in the library itself?
+This seems to be caused by some problem locating sourcecode or debugging info.  One reason this can occur is if you are linking in a static library made with `metal-libtool`.  Interestingly, this can occur even if the symbols in the library are not referenced by the shader being debugged.  Maybe referenced by a different shader in the capture, or just in the library itself?
 
 The workaround is to compile in a local version of the library into your metal target.
 
@@ -206,9 +206,62 @@ The workaround is to compile in a local version of the library into your metal t
 * FB8545458
 * FB8276481
 
+An additional cause of this issue is calling a `__attribute__((pure))` function that is relocated or optimized out by the compiler.  To work around this, declare the function without pure, or avoid calling functions that will be optimized out.
+
+* FB8889367
+
 ## Replayer terminated unexpectedly with error code 5.  timed out (5)
 
 Appears to be a hung system process.  For me the issue is usually in macOS rather than xcode or on device, so rebooting clears it.   Collecting more data on this one.
+
+## DYPShaderDebuggerErrorDomain:4 "Failed to create data source"
+
+This debugger error appears to have multiple sub-errors.
+
+### DYPShaderDebuggerDataErrorDomain:0 "Thread data not found"
+
+I am aware of 2 root causes for this one.  The first is that the capture produced some kind of other abort (IOAF code, timeout, etc.)  The workaround is to fix that abort (I know, right?  If fixed it, you wouldn't be debugging...)
+
+* FB8827782
+
+The other root cause is a bit trickier, but basically the debugger is struggling with memory layout. To fix this, simplify the memory layout, at least while you're trying to debug:
+
+* simplify array indexes.  Ideally, index by constants.  Avoid dependent array indexes (indexing by some value to look up another index).  Avoid indexing by opaque values such as the return value of a non-inline function.
+* flatten nested loops
+* reorder structs
+
+* FB8889577
+
+# Xcode behavior
+
+## "build succeeded" beachball
+
+I am aware of some cases where Xcode will beachball after "build succeeded".  This usually takes progressively longer and longer each time, and may be associated with taking GPU captures.  The workaround is to restart xcode.
+
+* FB8287558
+
+## Xcode crash - EXC_BAD_ACCESS (SIGSEGV)
+
+Xcode can crash when starting a metal debugging session.  This usually happens with
+
+```
+KERN_INVALID_ADDRESS at 0x0000000000000020
+EXC_CORPSE_NOTIFY
+Dispatch queue: GPUShaderDebuggerSession.queue (QOS: USER_INITIATED)
+
+Thread 36 Crashed:: Dispatch queue: GPUShaderDebuggerSession.queue (QOS: USER_INITIATED)
+0   com.apple.GPUToolsPlatformSupport-iOS	0x000000015013e6dc 0x14ff6c000 + 1910492
+1   com.apple.GPUToolsPlatformSupport-iOS	0x000000015013d884 0x14ff6c000 + 1906820
+2   com.apple.GPUToolsPlatformSupport-iOS	0x000000015013e771 0x14ff6c000 + 1910641
+3   com.apple.GPUToolsPlatformSupport-iOS	0x000000015013eb99 0x14ff6c000 + 1911705
+4   com.apple.GPUToolsPlatformSupport-iOS	0x000000015013ef01 0x14ff6c000 + 1912577
+5   com.apple.dt.gpu.GPUDebugger  	0x000000012ac4571a -[GPUShaderDebuggerDataSource variablesForExecutionHistoryNode:] + 110
+6   com.apple.dt.gpu.GPUDebugger  	0x000000012abdc17f __88-[GPUShaderDebuggerSession variableSnapshotsForExecutionHistoryNodes:completionHandler:]_block_invoke + 260
+7   com.apple.Foundation          	0x00007fff343a9ac5 __NSBLOCKOPERATION_IS_CALLING_OUT_TO_A_BLOCK__ + 7
+
+```
+
+This is typically caused by some problem understanding shader parameters.  In particular, `void*` pointers can cause this.
 
 ## IOAF codes
 
