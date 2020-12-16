@@ -43,7 +43,7 @@ For a production-ready solution, [stdmetal](https://github.com/drewcrawford/stdm
 
 This is usually caused by performing a metal capture programmatically during application launch.  The workaround is to perform the capture "later", such as with `.asyncAfter`.
 
-*FB7741457*
+*FB7741457 - works as intended*
 
 ## cross-compiling C code to metal
 
