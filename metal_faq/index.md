@@ -39,11 +39,7 @@ For a production-ready solution, [stdmetal](https://github.com/drewcrawford/stdm
 
 *FB7731230*
 
-## replayer terminated unexpectedly with error code 5
-
-This is usually caused by performing a metal capture programmatically during application launch.  The workaround is to perform the capture "later", such as with `.asyncAfter`.
-
-*FB7741457 - works as intended*
+Note that, this sort of control flow can confuse the compiler and lead to issues debugging metal shaders.  So you may want to pull this out if you have trouble attaching a debugger.
 
 ## cross-compiling C code to metal
 
@@ -90,6 +86,8 @@ The best way I know of to do this is to build a `.a` file, or a script/xcodeproj
 ```
 3.  Set the "input files" to `${TARGET_TEMP_DIR}/Metal/mylib.air`
 4.  Set the "output files" to `${BUILT_PRODUCTS_DIR}/libmylib.a`
+
+Note that doing this may case `DYPShaderDebuggerErrorDomain:1 "Failed instrument library"`, see error discussion below.
 
 ### If you are also doing this as part of a Swift package,
 
@@ -142,6 +140,34 @@ done
 
 *FB8276893*
 
+# stdlib
+
+## math functions
+
+I am aware of various "relaxed" behavior of metal math functions, relative to the familiar c or c++ stdlib behavior.  For example,
+
+> In [Metal] fast math, pow(x,y) is defined to be exp2(y* log2(x))...For x in the domain [0.5, 2], the maximum absolute error is <= 2-22; Otherwise, if x > 0 the maximum error is <= 2 ulp; Or, the results are undefined.  Based on hardware, this relaxed definition may cause issues for negative values. To get well defined for negative, one should use metal::precise:pow. 
+
+(this limitation is undocumented.)
+
+Should you encounter such behaviors, you may have better results using a `precise` function or disabling `fno-fast-math`.  However, see the discussion for `simd_length` and `fno-fast-math` below.
+
+FB8904929
+
+
+## `simd_length`
+
+I am aware of cases where the switching between `simd_length` (`metal::length`), `simd_fast_length` (`metal::fast::length`) and `simd_precise_length` (`metal::precise::length`) seems not to work.
+
+FB8882598
+
+
+# `fno-fast-math`
+
+In addition to the behavior in `simd_length`, I am aware of cases where Metal seems to ignore disabling `ffast-math` and continues illegal fp optimization.
+
+FB8880572
+
 # Metal errors and where to find them
 
 ## MTLCaptureError Code=1
@@ -160,12 +186,17 @@ Generally caused by trying to capture in an unusual environment, like in unit te
 
 * FB8095102
 
+Note that captures taken in this way may not be replayed against the simulator.
+
+* FB8904809
+
 ## CompilerError Code=2 "Compiler encountered an internal error"
 
 This is generally a crash in the metal compiler (the one that happens at runtime).  In my experience this is usually related to some problem in control flow analysis, so simplifying control flow may help.  It may also be specific to a particular GPU driver (see the crash in `MTLCompilerService` that occurred around the same time for more clues.)
 
 * FB7863589
 * FB8276262
+* FB8962634
 
 ## CompilerError Code=1 "Compiler encountered an internal error"
 
@@ -196,6 +227,10 @@ Usually caused by a GPU abort or IOAF that took place during the capture.
 
 Variant error has "NSCocoaErrorDomain:260" in the subhead.
 
+It appears that Xcode 12.3 / iOS 14.3 has added a diagnostic identifying a particular function at issue:
+
+> LLVM ERROR: Undefined symbol: _Z17SadTromboneOpaquev
+
 This seems to be caused by some problem locating sourcecode or debugging info.  One reason this can occur is if you are linking in a static library made with `metal-libtool`.  Interestingly, this can occur even if the symbols in the library are not referenced by the shader being debugged.  Maybe referenced by a different shader in the capture, or just in the library itself?
 
 The workaround is to compile in a local version of the library into your metal target.
@@ -213,6 +248,12 @@ An additional cause of this issue is calling a `__attribute__((pure))` function 
 ## Replayer terminated unexpectedly with error code 5.  timed out (5)
 
 Appears to be a hung system process.  For me the issue is usually in macOS rather than xcode or on device, so rebooting clears it.   Collecting more data on this one.
+
+### additional root cause - replayer terminated unexpectedly with error code 5
+
+This is usually caused by performing a metal capture programmatically during application launch.  The workaround is to perform the capture "later", such as with `.asyncAfter`.
+
+*FB7741457 - works as intended*
 
 ## DYPShaderDebuggerErrorDomain:4 "Failed to create data source"
 
@@ -262,6 +303,12 @@ Thread 36 Crashed:: Dispatch queue: GPUShaderDebuggerSession.queue (QOS: USER_IN
 ```
 
 This is typically caused by some problem understanding shader parameters.  In particular, `void*` pointers can cause this.
+
+## n/a
+
+When debugging a Metal shader, sometimes xcode will say a particular variable holds the value `n/a`.  Usually the lldb pane has the real value of the variable.
+
+* FB8959261
 
 ## IOAF codes
 
