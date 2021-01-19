@@ -190,40 +190,80 @@ Note that captures taken in this way may not be replayed against the simulator.
 
 * FB8904809
 
-## CompilerError Code=2 "Compiler encountered an internal error"
+## Runtime compiler errors
 
-This is generally a crash in the metal compiler (the one that happens at runtime).  In my experience this is usually related to some problem in control flow analysis, so simplifying control flow may help.  It may also be specific to a particular GPU driver (see the crash in `MTLCompilerService` that occurred around the same time for more clues.)
+Sometimes functions fail to compile (e.g., at runtime, when you create a PSO).  In your application, this usually presents as some `CompilerError`.  Separately, a crash report for `MTLCompilerService`
 
-* FB7863589
-* FB8276262
-* FB8962634
+The two `CompilerErrors` I'm aware of are
 
-## CompilerError Code=1 "Compiler encountered an internal error"
+* CompilerError Code=2 "Compiler encountered an internal error" (usually iOS or Simulator)
+* CompilerError Code=1 "Compiler encountered an internal error" (usually macOS).
 
-Similar to above, may be a variant for macOS
+For more information, dig into the appropriate MTLCompilerService crash report.  The backtrace may identify a particular affected GPU, as many of these issues are GPU-specific.
 
-* FB8779951
+### Other runtime compile application-level errors
 
-## Compilation failed with XPC_ERROR_CONNECTION_INTERRUPTED on 3 try
-
-Similar to Code=2 "Compiler encountered an internal error".  May be related to Shader Validator.
-
-* FB8469191
-* FB8824826
-
-## Compute function exceeds available temporary registers
+#### Compute function exceeds available temporary registers
 
 May have too many local variables.  Interestingly, shader validator appears to work around this issue, for reasons unknown.
 
 * FB8811182
 
-## DYPShaderDebuggerErrorDomain:4 "Failed to create data source" DYPShaderDebuggerDataErrorDomain:0 "Thread data not found"
+### libAMDIL902.dylib: llvm::ILAnnotateResourceIntrinsics::createResourceIntrinsic(llvm::Use&, llvm::RsrcUsageTy) + 222
 
-Usually caused by a GPU abort or IOAF that took place during the capture.
+Related to control flow analysis on AMD.  simplifying control flow may help.
+
+* FB7863589
+
+
+### libigc.dylib: llvm::MemoryDependenceResults::removeInstruction(llvm::Instruction*) + 1390
+
+May be related to vertex or fragment functions with very bad typesignatures.  One case I'm aware of involves swapping a vertex and fragment function.
+
+* FB8276262
+
+### libigc.dylib computeKnownBitsFromOperator(llvm::Operator const*, llvm::KnownBits&, unsigned int, (anonymous namespace)::Query const&) + 383
+
+Possible duplicate of `libigc.dylib: llvm::MemoryDependenceResults::removeInstruction(llvm::Instruction*) + 1390`
+
+* FB8276262
+
+### libLLVM.dylib llvm::SelectionDAG::LegalizeTypes() + 54
+
+May be related to use of null pointers on Intel.
+
+* FB8962634
+* FB8973899
+
+###  libLLVM.dylib llvm::Instruction::getFunction+ 6782680 () const + 0
+
+May be related to Shader Validator.
+
+* FB8469191
+
+
+## Problems attaching the debugger
+
+For various reasons, the Metal Debugger often fails to attach.  Below are some errors and their possible causes.
+
+### DYPShaderDebuggerErrorDomain:4 "Failed to create data source" DYPShaderDebuggerDataErrorDomain:0 "Thread data not found"
+
+Can be caused by a GPU abort or IOAF that took place during the capture.  Workaround is to not do that.
+
+Has other causes.  I believe that generlaly, the debugger is struggling with memory layout. To fix this, simplify the memory layout, at least while you're trying to debug:
+
+* simplify array indexes.  Ideally, index by constants.  Avoid dependent array indexes (indexing by some value to look up another index).  Avoid indexing by opaque values such as the return value of a non-inline function.
+* flatten nested loops
+* reorder structs
 
 * FB7872191
+* FB8969664
+* FB8968619
+* FB8924507
+* FB8827782
+* FB8889577
 
-## DYPShaderDebuggerErrorDomain:1 "Failed instrument library" DYMetalLibraryToolsServiceCompilerErrorDomain:1 "Task Failed: Building library: tools_instrumented_iphoneos_xxxxxxxx.xx.thin.metallib."
+### DYPShaderDebuggerErrorDomain:1 "Failed instrument library" DYMetalLibraryToolsServiceCompilerErrorDomain:1 "Task Failed: Building library: tools_instrumented_iphoneos_xxxxxxxx.xx.thin.metallib."
 
 Variant error has "NSCocoaErrorDomain:260" in the subhead.
 
@@ -245,43 +285,24 @@ An additional cause of this issue is calling a `__attribute__((pure))` function 
 
 * FB8889367
 
-## Replayer terminated unexpectedly with error code 5.  timed out (5)
+### Replayer terminated unexpectedly with error code 5.  timed out (5)
 
 Appears to be a hung system process.  For me the issue is usually in macOS rather than xcode or on device, so rebooting clears it.   Collecting more data on this one.
 
-### additional root cause - replayer terminated unexpectedly with error code 5
-
-This is usually caused by performing a metal capture programmatically during application launch.  The workaround is to perform the capture "later", such as with `.asyncAfter`.
+An additional root cause is performing a metal capture programmatically during application launch.  The workaround is to perform the capture "later", such as with `.asyncAfter`.
 
 *FB7741457 - works as intended*
 
-## DYPShaderDebuggerErrorDomain:4 "Failed to create data source"
 
-This debugger error appears to have multiple sub-errors.
+## Xcode behavior
 
-### DYPShaderDebuggerDataErrorDomain:0 "Thread data not found"
-
-I am aware of 2 root causes for this one.  The first is that the capture produced some kind of other abort (IOAF code, timeout, etc.)  The workaround is to fix that abort (I know, right?  If fixed it, you wouldn't be debugging...)
-
-* FB8827782
-
-The other root cause is a bit trickier, but basically the debugger is struggling with memory layout. To fix this, simplify the memory layout, at least while you're trying to debug:
-
-* simplify array indexes.  Ideally, index by constants.  Avoid dependent array indexes (indexing by some value to look up another index).  Avoid indexing by opaque values such as the return value of a non-inline function.
-* flatten nested loops
-* reorder structs
-
-* FB8889577
-
-# Xcode behavior
-
-## "build succeeded" beachball
+### "build succeeded" beachball
 
 I am aware of some cases where Xcode will beachball after "build succeeded".  This usually takes progressively longer and longer each time, and may be associated with taking GPU captures.  The workaround is to restart xcode.
 
 * FB8287558
 
-## Xcode crash - EXC_BAD_ACCESS (SIGSEGV)
+### Xcode crash - EXC_BAD_ACCESS (SIGSEGV)
 
 Xcode can crash when starting a metal debugging session.  This usually happens with
 
@@ -304,7 +325,7 @@ Thread 36 Crashed:: Dispatch queue: GPUShaderDebuggerSession.queue (QOS: USER_IN
 
 This is typically caused by some problem understanding shader parameters.  In particular, `void*` pointers can cause this.
 
-## n/a
+### n/a
 
 When debugging a Metal shader, sometimes xcode will say a particular variable holds the value `n/a`.  Usually the lldb pane has the real value of the variable.
 
