@@ -55,7 +55,7 @@ In Rust, value types are fundamental, and reference types are secondary.  They a
 
 ## Enums
 
-Enums are practically the same in both languages.  One difference is that Rust uses `match` where Swift uses `select`.  And the syntax is a little different, and Rust can do a little more.  But that's nothing to write home about.
+Enums are practically the same in both languages.  One difference is that Rust uses `match` where Swift uses `switch`.  And the syntax is a little different, and Rust can do a little more.  But that's nothing to write home about.
 
 ## Structs
 
